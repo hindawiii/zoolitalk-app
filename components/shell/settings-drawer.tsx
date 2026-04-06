@@ -27,6 +27,7 @@ import {
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
+  DrawerDescription,
   DrawerClose,
 } from '@/components/ui/drawer'
 import { Button } from '@/components/ui/button'
@@ -101,7 +102,12 @@ export function SettingsDrawer() {
             <Button variant="ghost" size="icon" onClick={() => setShowBlocklist(false)}>
               {isRTL ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
             </Button>
-            <DrawerTitle>{t('settings.blocklist')}</DrawerTitle>
+            <div>
+              <DrawerTitle>{t('settings.blocklist')}</DrawerTitle>
+              <DrawerDescription className="sr-only">
+                {isRTL ? 'قائمة المستخدمين المحظورين' : 'List of blocked users'}
+              </DrawerDescription>
+            </div>
           </DrawerHeader>
           <ScrollArea className="flex-1 p-4">
             {blockedUsers.length === 0 ? (
@@ -145,7 +151,12 @@ export function SettingsDrawer() {
       <DrawerContent className={cn(isRTL && 'font-arabic')}>
         <DrawerHeader className="border-b">
           <div className="flex items-center justify-between">
-            <DrawerTitle className="text-xl">{t('settings.title')}</DrawerTitle>
+            <div>
+              <DrawerTitle className="text-xl">{t('settings.title')}</DrawerTitle>
+              <DrawerDescription className="sr-only">
+                {isRTL ? 'إعدادات التطبيق والحساب' : 'App and account settings'}
+              </DrawerDescription>
+            </div>
             <DrawerClose asChild>
               <Button variant="ghost" size="sm">
                 {t('common.close')}
