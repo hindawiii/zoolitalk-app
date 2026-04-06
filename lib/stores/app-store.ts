@@ -22,6 +22,7 @@ interface AppState {
   giftSender: string | null
   showGift: (gift: GiftType, sender: string) => void
   hideGift: () => void
+  triggerGift: (gift: GiftType, sender: string) => void
   
   // Data saver mode
   dataSaverEnabled: boolean
@@ -54,6 +55,11 @@ export const useAppStore = create<AppState>()(
       giftSender: null,
       showGift: (gift, sender) => set({ activeGift: gift, giftSender: sender }),
       hideGift: () => set({ activeGift: null, giftSender: null }),
+      triggerGift: (gift, sender) => {
+        set({ activeGift: gift, giftSender: sender })
+        // Auto-hide after animation
+        setTimeout(() => set({ activeGift: null, giftSender: null }), 4000)
+      },
       
       // Data saver (default on for Sudan's network conditions)
       dataSaverEnabled: true,
