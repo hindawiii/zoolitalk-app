@@ -16,7 +16,9 @@ import {
   Sun,
   CloudRain,
   Wind,
-  Banknote
+  Banknote,
+  Calculator,
+  ArrowRight
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -24,6 +26,8 @@ import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useLanguage } from '@/components/providers/language-provider'
 import { cn } from '@/lib/utils'
 
@@ -160,6 +164,18 @@ export default function ZooliNews() {
   const [activeCategory, setActiveCategory] = React.useState<NewsCategory | 'all'>('all')
   const [selectedArticle, setSelectedArticle] = React.useState<NewsArticle | null>(null)
   const [isRefreshing, setIsRefreshing] = React.useState(false)
+  
+  // Currency Calculator state
+  const [calcAmount, setCalcAmount] = React.useState<string>('100')
+  const [calcCurrency, setCalcCurrency] = React.useState<string>('USD')
+  
+  // Get selected currency rate
+  const selectedRate = mockCurrencyRates.find(r => r.code === calcCurrency)
+  const amount = parseFloat(calcAmount) || 0
+  
+  // Calculate SDG amounts (buyRate = Bankak official, sellRate = Parallel market approximation)
+  const bankakResult = amount * (selectedRate?.buyRate || 0)
+  const parallelResult = amount * (selectedRate?.sellRate || 0)
 
   const filteredNews = activeCategory === 'all' 
     ? mockNews 
@@ -269,7 +285,7 @@ export default function ZooliNews() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col min-h-full bg-background overflow-y-auto">
       {/* Header */}
       <header className="p-4 border-b space-y-4">
         <div className="flex items-center justify-between">
@@ -306,27 +322,85 @@ export default function ZooliNews() {
 
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-4">
-          {/* Weather Widget */}
-          <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-full bg-accent/20">
-                    <WeatherIcon className="h-6 w-6 text-accent" />
-                  </div>
-                  <div>
-                    <p className={cn('font-semibold', isRTL && 'font-arabic')}>
-                      {isRTL ? mockWeather.cityAr : mockWeather.city}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {isRTL ? 'الرطوبة' : 'Humidity'}: {mockWeather.humidity}%
-                    </p>
-                  </div>
+          {/* Quick Currency Calculator */}
+          <Card className="border-primary/30 bg-gradient-to-br from-primary/5 via-background to-accent/5">
+            <CardHeader className="pb-3">
+              <CardTitle className={cn('text-base flex items-center gap-2', isRTL && 'font-arabic')}>
+                <div className="p-1.5 rounded-lg bg-primary/10">
+                  <Calculator className="h-4 w-4 text-primary" />
                 </div>
-                <div className="text-3xl font-bold text-primary">
-                  {mockWeather.temp}°C
+                {isRTL ? 'حاسبة العملات السريعة' : 'Quick Currency Calculator'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Input Row */}
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <Input
+                    type="number"
+                    placeholder={isRTL ? 'المبلغ' : 'Amount'}
+                    value={calcAmount}
+                    onChange={(e) => setCalcAmount(e.target.value)}
+                    className="text-lg font-semibold h-12 bg-secondary/50 border-border/50"
+                  />
+                </div>
+                <Select value={calcCurrency} onValueChange={setCalcCurrency}>
+                  <SelectTrigger className="w-[100px] h-12 bg-secondary/50 border-border/50">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mockCurrencyRates.map((rate) => (
+                      <SelectItem key={rate.code} value={rate.code}>
+                        <span className="font-medium">{rate.code}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Arrow indicator */}
+              <div className="flex justify-center">
+                <div className="p-2 rounded-full bg-accent/20">
+                  <ArrowRight className={cn('h-4 w-4 text-accent', isRTL && 'rotate-180')} />
                 </div>
               </div>
+              
+              {/* Results */}
+              <div className="grid grid-cols-2 gap-3">
+                {/* Bankak Rate */}
+                <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
+                  <p className={cn('text-xs text-muted-foreground mb-1', isRTL && 'font-arabic')}>
+                    {isRTL ? 'سعر بنكك' : 'Bankak Rate'}
+                  </p>
+                  <p className="text-xl font-bold text-primary">
+                    {bankakResult.toLocaleString('en-US', { maximumFractionDigits: 2 })}
+                  </p>
+                  <p className={cn('text-xs text-muted-foreground', isRTL && 'font-arabic')}>
+                    {isRTL ? 'جنيه سوداني' : 'SDG'}
+                  </p>
+                </div>
+                
+                {/* Parallel Market Rate */}
+                <div className="p-3 rounded-xl bg-accent/10 border border-accent/20">
+                  <p className={cn('text-xs text-muted-foreground mb-1', isRTL && 'font-arabic')}>
+                    {isRTL ? 'السوق الموازي' : 'Parallel Market'}
+                  </p>
+                  <p className="text-xl font-bold text-accent">
+                    {parallelResult.toLocaleString('en-US', { maximumFractionDigits: 2 })}
+                  </p>
+                  <p className={cn('text-xs text-muted-foreground', isRTL && 'font-arabic')}>
+                    {isRTL ? 'جنيه سوداني' : 'SDG'}
+                  </p>
+                </div>
+              </div>
+              
+              {/* Rate info */}
+              <p className={cn('text-xs text-center text-muted-foreground', isRTL && 'font-arabic')}>
+                {isRTL 
+                  ? `1 ${calcCurrency} = ${selectedRate?.buyRate.toFixed(2)} (بنكك) / ${selectedRate?.sellRate.toFixed(2)} (موازي) SDG`
+                  : `1 ${calcCurrency} = ${selectedRate?.buyRate.toFixed(2)} (Bankak) / ${selectedRate?.sellRate.toFixed(2)} (Parallel) SDG`
+                }
+              </p>
             </CardContent>
           </Card>
 
