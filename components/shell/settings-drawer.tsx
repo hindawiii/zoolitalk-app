@@ -154,8 +154,8 @@ export function SettingsDrawer() {
           </div>
         </DrawerHeader>
 
-        <ScrollArea className="flex-1">
-          <div className="p-4 space-y-6">
+        <ScrollArea className="flex-1 overflow-y-auto">
+          <div className="p-4 pb-8 space-y-6">
             {/* Profile Header */}
             {currentUser && (
               <div className="flex items-center gap-4 p-4 rounded-xl bg-secondary/50">
