@@ -18,7 +18,12 @@ import {
   Wind,
   Banknote,
   Calculator,
-  ArrowRight
+  ArrowRight,
+  GraduationCap,
+  Briefcase,
+  MapPin,
+  Calendar,
+  Wifi
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -65,6 +70,34 @@ interface WeatherData {
   temp: number
   condition: 'sunny' | 'cloudy' | 'rainy' | 'windy'
   humidity: number
+}
+
+interface Scholarship {
+  id: string
+  title: string
+  titleAr: string
+  country: string
+  countryAr: string
+  fullyFunded: boolean
+  deadline: string
+  deadlineAr: string
+  description: string
+  descriptionAr: string
+  url: string
+}
+
+interface Job {
+  id: string
+  role: string
+  roleAr: string
+  company: string
+  companyAr: string
+  isRemote: boolean
+  salaryRange: string
+  salaryRangeAr: string
+  description: string
+  descriptionAr: string
+  applyUrl: string
 }
 
 // News Articles Array - Ready for RSS feed integration
@@ -151,6 +184,92 @@ const mockWeather: WeatherData = {
   humidity: 65,
 }
 
+// Scholarships Data - Sudanese-relevant opportunities
+const mockScholarships: Scholarship[] = [
+  {
+    id: 's1',
+    title: 'Qatar University Full Scholarship 2026',
+    titleAr: 'منحة جامعة قطر الكاملة 2026',
+    country: 'Qatar',
+    countryAr: 'قطر',
+    fullyFunded: true,
+    deadline: 'May 15, 2026',
+    deadlineAr: '15 مايو 2026',
+    description: 'Full scholarship covering tuition, accommodation, and monthly stipend for undergraduate programs.',
+    descriptionAr: 'منحة كاملة تشمل الرسوم الدراسية والسكن وبدل شهري لبرامج البكالوريوس.',
+    url: 'https://example.com/qatar-scholarship',
+  },
+  {
+    id: 's2',
+    title: 'Türkiye Bursları Scholarship Program',
+    titleAr: 'برنامج المنح التركية',
+    country: 'Turkey',
+    countryAr: 'تركيا',
+    fullyFunded: true,
+    deadline: 'February 20, 2026',
+    deadlineAr: '20 فبراير 2026',
+    description: 'Government-funded scholarship for international students including Sudanese nationals.',
+    descriptionAr: 'منحة حكومية للطلاب الدوليين بما في ذلك السودانيين.',
+    url: 'https://example.com/turkey-scholarship',
+  },
+  {
+    id: 's3',
+    title: 'UAE Ministry of Education Scholarship',
+    titleAr: 'منحة وزارة التعليم الإماراتية',
+    country: 'UAE',
+    countryAr: 'الإمارات',
+    fullyFunded: false,
+    deadline: 'June 30, 2026',
+    deadlineAr: '30 يونيو 2026',
+    description: 'Partial scholarship for graduate studies in UAE universities.',
+    descriptionAr: 'منحة جزئية للدراسات العليا في الجامعات الإماراتية.',
+    url: 'https://example.com/uae-scholarship',
+  },
+]
+
+// Jobs Data - Opportunities for Sudanese professionals
+const mockJobs: Job[] = [
+  {
+    id: 'j1',
+    role: 'Frontend Developer',
+    roleAr: 'مطور واجهات أمامية',
+    company: 'Remote Tech Co.',
+    companyAr: 'شركة ريموت تك',
+    isRemote: true,
+    salaryRange: '$800 - $1,500/mo',
+    salaryRangeAr: '800 - 1,500 دولار/شهر',
+    description: 'React/Next.js developer position open to Sudanese developers worldwide.',
+    descriptionAr: 'وظيفة مطور React/Next.js متاحة للمطورين السودانيين حول العالم.',
+    applyUrl: 'https://example.com/job1',
+  },
+  {
+    id: 'j2',
+    role: 'Customer Support Specialist',
+    roleAr: 'أخصائي دعم العملاء',
+    company: 'Gulf Services Ltd',
+    companyAr: 'خدمات الخليج المحدودة',
+    isRemote: false,
+    salaryRange: 'SAR 4,000 - 6,000/mo',
+    salaryRangeAr: '4,000 - 6,000 ريال/شهر',
+    description: 'Arabic-speaking support role based in Riyadh, Saudi Arabia.',
+    descriptionAr: 'وظيفة دعم بالعربية في الرياض، المملكة العربية السعودية.',
+    applyUrl: 'https://example.com/job2',
+  },
+  {
+    id: 'j3',
+    role: 'Data Entry Specialist',
+    roleAr: 'أخصائي إدخال بيانات',
+    company: 'Freelance Platform',
+    companyAr: 'منصة العمل الحر',
+    isRemote: true,
+    salaryRange: '$300 - $600/mo',
+    salaryRangeAr: '300 - 600 دولار/شهر',
+    description: 'Part-time remote data entry work, flexible hours.',
+    descriptionAr: 'عمل إدخال بيانات عن بعد بدوام جزئي، ساعات مرنة.',
+    applyUrl: 'https://example.com/job3',
+  },
+]
+
 // Category config
 const categoryConfig: Record<NewsCategory, { icon: React.ElementType; labelEn: string; labelAr: string }> = {
   sudan: { icon: Globe, labelEn: 'Sudan', labelAr: 'السودان' },
@@ -164,10 +283,18 @@ export default function ZooliNews() {
   const [activeCategory, setActiveCategory] = React.useState<NewsCategory | 'all'>('all')
   const [selectedArticle, setSelectedArticle] = React.useState<NewsArticle | null>(null)
   const [isRefreshing, setIsRefreshing] = React.useState(false)
+  const [mainTab, setMainTab] = React.useState<'news' | 'opportunities'>('news')
   
   // Currency Calculator state
   const [calcAmount, setCalcAmount] = React.useState<string>('100')
   const [calcCurrency, setCalcCurrency] = React.useState<string>('USD')
+  
+  // Share to WhatsApp helper
+  const shareToWhatsApp = (title: string, type: 'scholarship' | 'job') => {
+    const message = `Check out this ${type} on Zoolitalk: ${title}`
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`
+    window.open(whatsappUrl, '_blank')
+  }
   
   // Get selected currency rate
   const selectedRate = mockCurrencyRates.find(r => r.code === calcCurrency)
@@ -449,86 +576,236 @@ export default function ZooliNews() {
             </CardContent>
           </Card>
 
-          {/* News Feed */}
-          <div className="space-y-4">
-            <h2 className={cn('font-semibold', isRTL && 'font-arabic')}>
-              {isRTL ? 'آخر الأخبار' : 'Latest News'}
-            </h2>
-            
-            {filteredNews.map((article, idx) => (
-              <Card 
-                key={article.id}
-                className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => setSelectedArticle(article)}
-              >
-                {idx === 0 ? (
-                  // Featured article (first one)
-                  <div>
-                    <div className="relative aspect-video bg-secondary">
-                      <Image
-                        src={article.image}
-                        alt={isRTL ? article.titleAr : article.title}
-                        fill
-                        className="object-cover"
-                      />
-                      <Badge 
-                        className="absolute top-3 left-3 bg-primary"
-                      >
-                        {isRTL ? categoryConfig[article.category].labelAr : categoryConfig[article.category].labelEn}
-                      </Badge>
-                    </div>
-                    <CardContent className="p-4 space-y-2">
-                      <h3 className={cn(
-                        'font-semibold text-lg line-clamp-2',
-                        isRTL && 'font-arabic'
-                      )}>
-                        {isRTL ? article.titleAr : article.title}
-                      </h3>
-                      <p className={cn(
-                        'text-sm text-muted-foreground line-clamp-2',
-                        isRTL && 'font-arabic'
-                      )}>
-                        {isRTL ? article.summaryAr : article.summary}
-                      </p>
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>{isRTL ? article.sourceAr : article.source}</span>
-                        <span>{formatTimeAgo(article.publishedAt)}</span>
-                      </div>
-                    </CardContent>
-                  </div>
-                ) : (
-                  // Regular article
-                  <CardContent className="p-3 flex gap-3">
-                    <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-secondary shrink-0">
-                      <Image
-                        src={article.image}
-                        alt={isRTL ? article.titleAr : article.title}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0 flex flex-col justify-between">
-                      <div>
-                        <Badge variant="secondary" className="text-xs mb-1">
+          {/* Main Content Tabs */}
+          <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as 'news' | 'opportunities')} className="w-full">
+            <TabsList className="w-full grid grid-cols-2 mb-4">
+              <TabsTrigger value="news" className={cn('gap-2', isRTL && 'font-arabic')}>
+                <Globe className="h-4 w-4" />
+                {isRTL ? 'آخر الأخبار' : 'Latest News'}
+              </TabsTrigger>
+              <TabsTrigger value="opportunities" className={cn('gap-2', isRTL && 'font-arabic')}>
+                <Briefcase className="h-4 w-4" />
+                {isRTL ? 'الفرص' : 'Opportunities'}
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Latest News Tab */}
+            <TabsContent value="news" className="mt-0 space-y-4">
+              {filteredNews.map((article, idx) => (
+                <Card 
+                  key={article.id}
+                  className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => setSelectedArticle(article)}
+                >
+                  {idx === 0 ? (
+                    // Featured article (first one)
+                    <div>
+                      <div className="relative aspect-video bg-secondary">
+                        <Image
+                          src={article.image}
+                          alt={isRTL ? article.titleAr : article.title}
+                          fill
+                          className="object-cover"
+                        />
+                        <Badge 
+                          className="absolute top-3 left-3 bg-primary"
+                        >
                           {isRTL ? categoryConfig[article.category].labelAr : categoryConfig[article.category].labelEn}
                         </Badge>
+                      </div>
+                      <CardContent className="p-4 space-y-2">
                         <h3 className={cn(
-                          'font-medium text-sm line-clamp-2',
+                          'font-semibold text-lg line-clamp-2',
                           isRTL && 'font-arabic'
                         )}>
                           {isRTL ? article.titleAr : article.title}
                         </h3>
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>{isRTL ? article.sourceAr : article.source}</span>
-                        <span>{formatTimeAgo(article.publishedAt)}</span>
-                      </div>
+                        <p className={cn(
+                          'text-sm text-muted-foreground line-clamp-2',
+                          isRTL && 'font-arabic'
+                        )}>
+                          {isRTL ? article.summaryAr : article.summary}
+                        </p>
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>{isRTL ? article.sourceAr : article.source}</span>
+                          <span>{formatTimeAgo(article.publishedAt)}</span>
+                        </div>
+                      </CardContent>
                     </div>
-                  </CardContent>
-                )}
-              </Card>
-            ))}
-          </div>
+                  ) : (
+                    // Regular article
+                    <CardContent className="p-3 flex gap-3">
+                      <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-secondary shrink-0">
+                        <Image
+                          src={article.image}
+                          alt={isRTL ? article.titleAr : article.title}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0 flex flex-col justify-between">
+                        <div>
+                          <Badge variant="secondary" className="text-xs mb-1">
+                            {isRTL ? categoryConfig[article.category].labelAr : categoryConfig[article.category].labelEn}
+                          </Badge>
+                          <h3 className={cn(
+                            'font-medium text-sm line-clamp-2',
+                            isRTL && 'font-arabic'
+                          )}>
+                            {isRTL ? article.titleAr : article.title}
+                          </h3>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>{isRTL ? article.sourceAr : article.source}</span>
+                          <span>{formatTimeAgo(article.publishedAt)}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+              ))}
+            </TabsContent>
+
+            {/* Opportunities Tab */}
+            <TabsContent value="opportunities" className="mt-0 space-y-6">
+              {/* Scholarships Section */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <GraduationCap className="h-5 w-5 text-primary" />
+                  <h3 className={cn('font-semibold text-lg', isRTL && 'font-arabic')}>
+                    {isRTL ? 'المنح الدراسية' : 'Scholarships'}
+                  </h3>
+                </div>
+                
+                {mockScholarships.map((scholarship) => (
+                  <Card key={scholarship.id} className="border-primary/20 hover:shadow-md transition-shadow">
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className={cn('font-semibold line-clamp-2', isRTL && 'font-arabic')}>
+                          {isRTL ? scholarship.titleAr : scholarship.title}
+                        </h4>
+                        {scholarship.fullyFunded && (
+                          <Badge className="bg-green-500 hover:bg-green-600 shrink-0">
+                            {isRTL ? 'ممولة بالكامل' : 'Fully Funded'}
+                          </Badge>
+                        )}
+                      </div>
+                      
+                      <p className={cn('text-sm text-muted-foreground line-clamp-2', isRTL && 'font-arabic')}>
+                        {isRTL ? scholarship.descriptionAr : scholarship.description}
+                      </p>
+                      
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          <span className={isRTL ? 'font-arabic' : ''}>
+                            {isRTL ? scholarship.countryAr : scholarship.country}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          <span className={isRTL ? 'font-arabic' : ''}>
+                            {isRTL ? scholarship.deadlineAr : scholarship.deadline}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-2 pt-1">
+                        <Button 
+                          size="sm" 
+                          className="flex-1 gap-2"
+                          onClick={() => window.open(scholarship.url, '_blank')}
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          {isRTL ? 'التفاصيل' : 'Details'}
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="gap-2 text-green-600 border-green-600 hover:bg-green-50"
+                          onClick={() => shareToWhatsApp(isRTL ? scholarship.titleAr : scholarship.title, 'scholarship')}
+                        >
+                          <Share2 className="h-3 w-3" />
+                          {isRTL ? 'واتساب' : 'WhatsApp'}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              <Separator />
+
+              {/* Jobs Section */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Briefcase className="h-5 w-5 text-accent" />
+                  <h3 className={cn('font-semibold text-lg', isRTL && 'font-arabic')}>
+                    {isRTL ? 'فرص العمل' : 'Jobs'}
+                  </h3>
+                </div>
+                
+                {mockJobs.map((job) => (
+                  <Card key={job.id} className="border-accent/20 hover:shadow-md transition-shadow">
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h4 className={cn('font-semibold', isRTL && 'font-arabic')}>
+                            {isRTL ? job.roleAr : job.role}
+                          </h4>
+                          <p className={cn('text-sm text-muted-foreground', isRTL && 'font-arabic')}>
+                            {isRTL ? job.companyAr : job.company}
+                          </p>
+                        </div>
+                        <Badge 
+                          variant={job.isRemote ? 'default' : 'secondary'}
+                          className={cn(job.isRemote && 'bg-blue-500 hover:bg-blue-600')}
+                        >
+                          {job.isRemote ? (
+                            <span className="flex items-center gap-1">
+                              <Wifi className="h-3 w-3" />
+                              {isRTL ? 'عن بعد' : 'Remote'}
+                            </span>
+                          ) : (
+                            isRTL ? 'محلي' : 'On-site'
+                          )}
+                        </Badge>
+                      </div>
+                      
+                      <p className={cn('text-sm text-muted-foreground line-clamp-2', isRTL && 'font-arabic')}>
+                        {isRTL ? job.descriptionAr : job.description}
+                      </p>
+                      
+                      <div className="flex items-center gap-1 text-sm font-medium text-accent">
+                        <DollarSign className="h-4 w-4" />
+                        <span>{isRTL ? job.salaryRangeAr : job.salaryRange}</span>
+                      </div>
+                      
+                      <div className="flex gap-2 pt-1">
+                        <Button 
+                          size="sm" 
+                          className="flex-1 gap-2 bg-accent hover:bg-accent/90"
+                          onClick={() => window.open(job.applyUrl, '_blank')}
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          {isRTL ? 'تقدم الآن' : 'Apply Now'}
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="gap-2 text-green-600 border-green-600 hover:bg-green-50"
+                          onClick={() => shareToWhatsApp(isRTL ? job.roleAr : job.role, 'job')}
+                        >
+                          <Share2 className="h-3 w-3" />
+                          {isRTL ? 'واتساب' : 'WhatsApp'}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </ScrollArea>
     </div>
