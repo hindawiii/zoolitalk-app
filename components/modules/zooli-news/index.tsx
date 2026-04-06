@@ -5,19 +5,18 @@ import Image from 'next/image'
 import { 
   TrendingUp, 
   Cloud, 
-  Bitcoin, 
   Globe, 
   Dribbble,
   DollarSign,
   ExternalLink,
   RefreshCw,
   ChevronLeft,
-  X,
   Share2,
   Bookmark,
   Sun,
   CloudRain,
-  Wind
+  Wind,
+  Banknote
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -47,10 +46,12 @@ interface NewsArticle {
 
 type NewsCategory = 'sudan' | 'sports' | 'economy' | 'world'
 
-interface CryptoPrice {
-  symbol: string
-  name: string
-  price: number
+interface CurrencyRate {
+  code: string
+  nameEn: string
+  nameAr: string
+  buyRate: number
+  sellRate: number
   change24h: number
 }
 
@@ -62,7 +63,9 @@ interface WeatherData {
   humidity: number
 }
 
-// Mock Data
+// News Articles Array - Ready for RSS feed integration
+// To connect to a real RSS feed, replace this array with fetched data
+// Suggested RSS sources: Sudan Tribune, SUNA News, Al Rakoba
 const mockNews: NewsArticle[] = [
   {
     id: '1',
@@ -126,19 +129,22 @@ const mockNews: NewsArticle[] = [
   },
 ]
 
-const mockCrypto: CryptoPrice[] = [
-  { symbol: 'BTC', name: 'Bitcoin', price: 67234.50, change24h: 2.34 },
-  { symbol: 'ETH', name: 'Ethereum', price: 3456.78, change24h: -1.23 },
-  { symbol: 'BNB', name: 'BNB', price: 567.89, change24h: 0.89 },
-  { symbol: 'SOL', name: 'Solana', price: 145.67, change24h: 5.67 },
+// Sudanese Currency Rates (against SDG - Sudanese Pound)
+// These rates can be connected to a real API like Bankak or parallel market sources
+const mockCurrencyRates: CurrencyRate[] = [
+  { code: 'USD', nameEn: 'US Dollar', nameAr: 'دولار أمريكي', buyRate: 601.50, sellRate: 605.00, change24h: 0.85 },
+  { code: 'SAR', nameEn: 'Saudi Riyal', nameAr: 'ريال سعودي', buyRate: 160.25, sellRate: 161.50, change24h: -0.32 },
+  { code: 'AED', nameEn: 'UAE Dirham', nameAr: 'درهم إماراتي', buyRate: 163.75, sellRate: 165.00, change24h: 0.45 },
 ]
 
+// Weather data - can be connected to OpenWeatherMap API or similar
+// Default to Port Sudan for coastal Sudan weather
 const mockWeather: WeatherData = {
-  city: 'Khartoum',
-  cityAr: 'الخرطوم',
-  temp: 38,
+  city: 'Port Sudan',
+  cityAr: 'بورتسودان',
+  temp: 34,
   condition: 'sunny',
-  humidity: 25,
+  humidity: 65,
 }
 
 // Category config
@@ -324,29 +330,45 @@ export default function ZooliNews() {
             </CardContent>
           </Card>
 
-          {/* Crypto Ticker */}
+          {/* Sudanese Currency Rates */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className={cn('text-sm flex items-center gap-2', isRTL && 'font-arabic')}>
-                <Bitcoin className="h-4 w-4 text-accent" />
-                {isRTL ? 'أسعار العملات الرقمية' : 'Crypto Prices'}
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className={cn('text-sm flex items-center gap-2', isRTL && 'font-arabic')}>
+                  <Banknote className="h-4 w-4 text-accent" />
+                  {isRTL ? 'أسعار العملات مقابل الجنيه' : 'Currency Rates (SDG)'}
+                </CardTitle>
+                <span className="text-xs text-muted-foreground">
+                  {isRTL ? 'المصدر: بنكك / السوق الموازي' : 'Source: Bankak / Parallel Market'}
+                </span>
+              </div>
             </CardHeader>
             <CardContent className="pb-4">
-              <div className="flex gap-4 overflow-x-auto pb-2">
-                {mockCrypto.map((crypto) => (
+              <div className="flex gap-3 overflow-x-auto pb-2">
+                {mockCurrencyRates.map((currency) => (
                   <div 
-                    key={crypto.symbol}
-                    className="flex-shrink-0 flex items-center gap-2 p-2 rounded-lg bg-secondary/50"
+                    key={currency.code}
+                    className="flex-shrink-0 p-3 rounded-lg bg-secondary/50 min-w-[140px]"
                   >
-                    <span className="font-semibold text-sm">{crypto.symbol}</span>
-                    <span className="text-sm">${crypto.price.toLocaleString()}</span>
-                    <span className={cn(
-                      'text-xs font-medium',
-                      crypto.change24h >= 0 ? 'text-green-500' : 'text-red-500'
-                    )}>
-                      {crypto.change24h >= 0 ? '+' : ''}{crypto.change24h.toFixed(2)}%
-                    </span>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-semibold text-sm">{currency.code}</span>
+                      <span className={cn(
+                        'text-xs font-medium',
+                        currency.change24h >= 0 ? 'text-green-500' : 'text-red-500'
+                      )}>
+                        {currency.change24h >= 0 ? '+' : ''}{currency.change24h.toFixed(2)}%
+                      </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      <div className="flex justify-between">
+                        <span>{isRTL ? 'شراء:' : 'Buy:'}</span>
+                        <span className="font-medium text-foreground">{currency.buyRate.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>{isRTL ? 'بيع:' : 'Sell:'}</span>
+                        <span className="font-medium text-foreground">{currency.sellRate.toFixed(2)}</span>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
