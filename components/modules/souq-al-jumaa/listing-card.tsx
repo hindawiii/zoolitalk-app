@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import Image from 'next/image'
-import { Heart, MessageCircle, MapPin, RefreshCw } from 'lucide-react'
+import { Heart, MapPin, RefreshCw } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -13,11 +13,10 @@ import { cn } from '@/lib/utils'
 
 interface ListingCardProps {
   listing: Listing
-  onSelect: (listing: Listing) => void
-  onStartWansa: (listing: Listing) => void
+  onClick?: () => void
 }
 
-export function ListingCard({ listing, onSelect, onStartWansa }: ListingCardProps) {
+export function ListingCard({ listing, onClick }: ListingCardProps) {
   const { isRTL, t } = useLanguage()
   const { toggleFavorite, favorites } = useSouqStore()
   const isFavorite = favorites.includes(listing.id)
@@ -30,9 +29,11 @@ export function ListingCard({ listing, onSelect, onStartWansa }: ListingCardProp
     }).format(price)
   }
 
-  const formatTimeAgo = (date: Date) => {
+  const formatTimeAgo = (date: Date | string | undefined) => {
+    if (!date) return isRTL ? 'الآن' : 'Just now'
+    const dateObj = typeof date === 'string' ? new Date(date) : date
     const now = new Date()
-    const diff = now.getTime() - date.getTime()
+    const diff = now.getTime() - dateObj.getTime()
     const hours = Math.floor(diff / (1000 * 60 * 60))
     const days = Math.floor(hours / 24)
     
@@ -50,7 +51,7 @@ export function ListingCard({ listing, onSelect, onStartWansa }: ListingCardProp
   return (
     <Card 
       className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow border-border/50"
-      onClick={() => onSelect(listing)}
+      onClick={onClick}
     >
       {/* Image */}
       <div className="relative aspect-square bg-secondary">
@@ -113,7 +114,7 @@ export function ListingCard({ listing, onSelect, onStartWansa }: ListingCardProp
             {formatPrice(listing.price)}
           </span>
           <span className="text-xs text-muted-foreground">
-            {formatTimeAgo(listing.createdAt)}
+            {formatTimeAgo(listing.timestamp)}
           </span>
         </div>
 
@@ -135,31 +136,17 @@ export function ListingCard({ listing, onSelect, onStartWansa }: ListingCardProp
           </div>
         )}
 
-        {/* Seller & Chat */}
-        <div className="flex items-center justify-between pt-2 border-t border-border/50">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <Avatar className="h-6 w-6">
-              <AvatarImage src={listing.seller.avatar} alt={listing.seller.name} />
-              <AvatarFallback className="text-xs bg-primary/10">
-                {listing.seller.name[0]}
-              </AvatarFallback>
-            </Avatar>
-            <span className="text-xs text-muted-foreground truncate">
-              {listing.seller.name}
-            </span>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2 text-xs text-primary hover:text-primary hover:bg-primary/10"
-            onClick={(e) => {
-              e.stopPropagation()
-              onStartWansa(listing)
-            }}
-          >
-            <MessageCircle className="h-3 w-3 me-1" />
-            {isRTL ? 'ونسة' : 'Chat'}
-          </Button>
+        {/* Seller */}
+        <div className="flex items-center gap-2 pt-2 border-t border-border/50">
+          <Avatar className="h-6 w-6">
+            <AvatarImage src={listing.sellerAvatar} alt={listing.sellerName} />
+            <AvatarFallback className="text-xs bg-primary/10">
+              {listing.sellerName?.[0] ?? '?'}
+            </AvatarFallback>
+          </Avatar>
+          <span className="text-xs text-muted-foreground truncate">
+            {listing.sellerName}
+          </span>
         </div>
       </CardContent>
     </Card>
