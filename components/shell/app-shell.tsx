@@ -1,0 +1,127 @@
+'use client'
+
+import * as React from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Settings } from 'lucide-react'
+import { BottomNavigation } from './bottom-navigation'
+import { SettingsDrawer } from './settings-drawer'
+import { useAppStore, type TabId } from '@/lib/stores/app-store'
+import { useLanguage } from '@/components/providers/language-provider'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+
+// Lazy load module components
+const AlWansa = React.lazy(() => import('@/components/modules/al-wansa'))
+const AlSaha = React.lazy(() => import('@/components/modules/al-saha'))
+const SouqAlJumaa = React.lazy(() => import('@/components/modules/souq-al-jumaa'))
+const ZooliNews = React.lazy(() => import('@/components/modules/zooli-news'))
+const ZoolProfile = React.lazy(() => import('@/components/modules/zool-profile'))
+
+// Map tabs to components
+const tabComponents: Record<TabId, React.LazyExoticComponent<React.ComponentType>> = {
+  wansa: AlWansa,
+  saha: AlSaha,
+  souq: SouqAlJumaa,
+  news: ZooliNews,
+  profile: ZoolProfile,
+}
+
+// Loading fallback with Jabana spinner
+function JabanaLoader() {
+  const { isRTL } = useLanguage()
+  
+  return (
+    <div className="flex flex-col items-center justify-center h-full gap-4">
+      <div className="jabana-loader w-16 h-16">
+        <svg viewBox="0 0 64 64" className="w-full h-full">
+          <defs>
+            <linearGradient id="jabanaLoaderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="var(--primary)" />
+              <stop offset="100%" stopColor="var(--accent)" />
+            </linearGradient>
+          </defs>
+          {/* Simplified Jabana pot */}
+          <ellipse cx="32" cy="48" rx="20" ry="12" fill="url(#jabanaLoaderGrad)" />
+          <path d="M12 48 Q8 32 18 26 L46 26 Q56 32 52 48" fill="url(#jabanaLoaderGrad)" />
+          {/* Spout */}
+          <path d="M52 34 Q60 28 62 22" fill="none" stroke="var(--primary)" strokeWidth="3" strokeLinecap="round" />
+          {/* Handle */}
+          <path d="M12 34 Q2 38 6 48 Q10 54 14 50" fill="none" stroke="var(--primary)" strokeWidth="3" />
+          {/* Steam */}
+          <circle cx="28" cy="18" r="2" fill="var(--muted-foreground)" opacity="0.6">
+            <animate attributeName="cy" values="18;10;18" dur="1.5s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0.6;0.2;0.6" dur="1.5s" repeatCount="indefinite" />
+          </circle>
+          <circle cx="36" cy="16" r="2" fill="var(--muted-foreground)" opacity="0.4">
+            <animate attributeName="cy" values="16;8;16" dur="1.8s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0.4;0.1;0.4" dur="1.8s" repeatCount="indefinite" />
+          </circle>
+        </svg>
+      </div>
+      <p className={cn('text-sm text-muted-foreground', isRTL && 'font-arabic')}>
+        {isRTL ? 'جاري التحميل...' : 'Loading...'}
+      </p>
+    </div>
+  )
+}
+
+// Page transition variants
+const pageVariants = {
+  initial: { opacity: 0, x: 20 },
+  enter: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: -20 },
+}
+
+export function AppShell() {
+  const { activeTab, setSettingsOpen } = useAppStore()
+  const { t, isRTL } = useLanguage()
+  
+  const ActiveModule = tabComponents[activeTab]
+
+  return (
+    <div className="relative flex flex-col h-dvh bg-background overflow-hidden">
+      {/* Header */}
+      <header className="sticky top-0 z-30 flex items-center justify-between h-14 px-4 bg-card/80 backdrop-blur-md border-b">
+        <h1 className={cn(
+          'text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent',
+          isRTL && 'font-arabic'
+        )}>
+          {t('app.name')}
+        </h1>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setSettingsOpen(true)}
+          aria-label={t('settings.title')}
+        >
+          <Settings className="h-5 w-5" />
+        </Button>
+      </header>
+
+      {/* Main Content Area */}
+      <main className="flex-1 overflow-hidden content-area">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            variants={pageVariants}
+            initial="initial"
+            animate="enter"
+            exit="exit"
+            transition={{ duration: 0.2, ease: 'easeInOut' }}
+            className="h-full"
+          >
+            <React.Suspense fallback={<JabanaLoader />}>
+              <ActiveModule />
+            </React.Suspense>
+          </motion.div>
+        </AnimatePresence>
+      </main>
+
+      {/* Bottom Navigation */}
+      <BottomNavigation />
+
+      {/* Settings Drawer */}
+      <SettingsDrawer />
+    </div>
+  )
+}
