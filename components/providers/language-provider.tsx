@@ -16,7 +16,7 @@ const LanguageContext = React.createContext<LanguageContextType | null>(null)
 const translations: Record<Language, Record<string, string>> = {
   ar: {
     // App
-    'app.name': 'زوليتالك',
+    'app.name': 'زولي توك',
     'app.tagline': 'الراكوبة الرقمية',
     
     // Navigation
@@ -165,7 +165,7 @@ const translations: Record<Language, Record<string, string>> = {
   },
   en: {
     // App
-    'app.name': 'Zoolitalk',
+    'app.name': 'Zooli Talk',
     'app.tagline': 'The Digital Rakoba',
     
     // Navigation

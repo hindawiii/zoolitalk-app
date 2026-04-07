@@ -57,6 +57,7 @@ type NewsCategory = 'sudan' | 'sports' | 'economy' | 'world'
 
 interface CurrencyRate {
   code: string
+  flag: string
   nameEn: string
   nameAr: string
   buyRate: number
@@ -169,9 +170,16 @@ const mockNews: NewsArticle[] = [
 // Sudanese Currency Rates (against SDG - Sudanese Pound)
 // These rates can be connected to a real API like Bankak or parallel market sources
 const mockCurrencyRates: CurrencyRate[] = [
-  { code: 'USD', nameEn: 'US Dollar', nameAr: 'دولار أمريكي', buyRate: 601.50, sellRate: 605.00, change24h: 0.85 },
-  { code: 'SAR', nameEn: 'Saudi Riyal', nameAr: 'ريال سعودي', buyRate: 160.25, sellRate: 161.50, change24h: -0.32 },
-  { code: 'AED', nameEn: 'UAE Dirham', nameAr: 'درهم إماراتي', buyRate: 163.75, sellRate: 165.00, change24h: 0.45 },
+  { code: 'USD', flag: '🇺🇸', nameEn: 'US Dollar', nameAr: 'دولار أمريكي', buyRate: 601.50, sellRate: 605.00, change24h: 0.85 },
+  { code: 'SAR', flag: '🇸🇦', nameEn: 'Saudi Riyal', nameAr: 'ريال سعودي', buyRate: 160.25, sellRate: 161.50, change24h: -0.32 },
+  { code: 'AED', flag: '🇦🇪', nameEn: 'UAE Dirham', nameAr: 'درهم إماراتي', buyRate: 163.75, sellRate: 165.00, change24h: 0.45 },
+  { code: 'EUR', flag: '🇪🇺', nameEn: 'Euro', nameAr: 'يورو', buyRate: 652.00, sellRate: 658.00, change24h: 1.12 },
+  { code: 'GBP', flag: '🇬🇧', nameEn: 'British Pound', nameAr: 'جنيه إسترليني', buyRate: 762.50, sellRate: 770.00, change24h: 0.68 },
+  { code: 'QAR', flag: '🇶🇦', nameEn: 'Qatari Riyal', nameAr: 'ريال قطري', buyRate: 165.00, sellRate: 166.50, change24h: 0.22 },
+  { code: 'KWD', flag: '🇰🇼', nameEn: 'Kuwaiti Dinar', nameAr: 'دينار كويتي', buyRate: 1960.00, sellRate: 1980.00, change24h: 0.15 },
+  { code: 'EGP', flag: '🇪🇬', nameEn: 'Egyptian Pound', nameAr: 'جنيه مصري', buyRate: 12.25, sellRate: 12.50, change24h: -0.45 },
+  { code: 'DZD', flag: '🇩🇿', nameEn: 'Algerian Dinar', nameAr: 'دينار جزائري', buyRate: 4.45, sellRate: 4.55, change24h: -0.18 },
+  { code: 'MAD', flag: '🇲🇦', nameEn: 'Moroccan Dirham', nameAr: 'درهم مغربي', buyRate: 60.50, sellRate: 61.25, change24h: 0.33 },
 ]
 
 // Weather data - can be connected to OpenWeatherMap API or similar
@@ -291,7 +299,12 @@ export default function ZooliNews() {
   
   // Share to WhatsApp helper
   const shareToWhatsApp = (title: string, type: 'scholarship' | 'job') => {
-    const message = `Check out this ${type} on Zoolitalk: ${title}`
+    const typeLabel = type === 'scholarship' 
+      ? (isRTL ? 'منحة دراسية' : 'scholarship') 
+      : (isRTL ? 'فرصة عمل' : 'job opportunity')
+    const message = isRTL 
+      ? `شوف الـ${typeLabel} دي على زولي توك: ${title}` 
+      : `Check out this ${typeLabel} on Zooli Talk: ${title}`
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`
     window.open(whatsappUrl, '_blank')
   }
@@ -472,13 +485,21 @@ export default function ZooliNews() {
                   />
                 </div>
                 <Select value={calcCurrency} onValueChange={setCalcCurrency}>
-                  <SelectTrigger className="w-[100px] h-12 bg-secondary/50 border-border/50">
-                    <SelectValue />
+                  <SelectTrigger className="w-[120px] h-12 bg-secondary/50 border-border/50">
+                    <SelectValue>
+                      <span className="flex items-center gap-1.5">
+                        <span>{selectedRate?.flag}</span>
+                        <span className="font-medium">{calcCurrency}</span>
+                      </span>
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {mockCurrencyRates.map((rate) => (
                       <SelectItem key={rate.code} value={rate.code}>
-                        <span className="font-medium">{rate.code}</span>
+                        <span className="flex items-center gap-2">
+                          <span>{rate.flag}</span>
+                          <span className="font-medium">{rate.code}</span>
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -524,8 +545,8 @@ export default function ZooliNews() {
               {/* Rate info */}
               <p className={cn('text-xs text-center text-muted-foreground', isRTL && 'font-arabic')}>
                 {isRTL 
-                  ? `1 ${calcCurrency} = ${selectedRate?.buyRate.toFixed(2)} (بنكك) / ${selectedRate?.sellRate.toFixed(2)} (موازي) SDG`
-                  : `1 ${calcCurrency} = ${selectedRate?.buyRate.toFixed(2)} (Bankak) / ${selectedRate?.sellRate.toFixed(2)} (Parallel) SDG`
+                  ? `1 ${selectedRate?.flag} ${calcCurrency} = ${selectedRate?.buyRate.toFixed(2)} (بنكك) / ${selectedRate?.sellRate.toFixed(2)} (موازي) SDG`
+                  : `1 ${selectedRate?.flag} ${calcCurrency} = ${selectedRate?.buyRate.toFixed(2)} (Bankak) / ${selectedRate?.sellRate.toFixed(2)} (Parallel) SDG`
                 }
               </p>
             </CardContent>
@@ -545,22 +566,25 @@ export default function ZooliNews() {
               </div>
             </CardHeader>
             <CardContent className="pb-4">
-              <div className="flex gap-3 overflow-x-auto pb-2">
+              <div className="flex gap-2 overflow-x-auto pb-2 -mx-2 px-2">
                 {mockCurrencyRates.map((currency) => (
                   <div 
                     key={currency.code}
-                    className="flex-shrink-0 p-3 rounded-lg bg-secondary/50 min-w-[140px]"
+                    className="flex-shrink-0 p-2.5 rounded-lg bg-secondary/50 min-w-[115px]"
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-semibold text-sm">{currency.code}</span>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="flex items-center gap-1">
+                        <span className="text-base">{currency.flag}</span>
+                        <span className="font-semibold text-sm">{currency.code}</span>
+                      </span>
                       <span className={cn(
-                        'text-xs font-medium',
+                        'text-[10px] font-medium',
                         currency.change24h >= 0 ? 'text-green-500' : 'text-red-500'
                       )}>
-                        {currency.change24h >= 0 ? '+' : ''}{currency.change24h.toFixed(2)}%
+                        {currency.change24h >= 0 ? '+' : ''}{currency.change24h.toFixed(1)}%
                       </span>
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-[11px] text-muted-foreground space-y-0.5">
                       <div className="flex justify-between">
                         <span>{isRTL ? 'شراء:' : 'Buy:'}</span>
                         <span className="font-medium text-foreground">{currency.buyRate.toFixed(2)}</span>
