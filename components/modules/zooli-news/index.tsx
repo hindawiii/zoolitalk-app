@@ -425,9 +425,9 @@ export default function ZooliNews() {
   }
 
   return (
-    <div className="flex flex-col min-h-full bg-background overflow-y-auto">
+    <div className="flex flex-col min-h-full w-full max-w-full bg-background">
       {/* Header */}
-      <header className="p-4 border-b space-y-4">
+      <header className="px-4 py-4 border-b space-y-4 w-full">
         <div className="flex items-center justify-between">
           <h1 className={cn('text-2xl font-bold', isRTL && 'font-arabic')}>
             {isRTL ? 'زولي نيوز' : 'Zooli News'}
@@ -460,10 +460,10 @@ export default function ZooliNews() {
         </Tabs>
       </header>
 
-      <ScrollArea className="flex-1">
-        <div className="p-4 space-y-4">
+      <ScrollArea className="flex-1 w-full">
+        <div className="px-4 py-4 space-y-4 w-full max-w-full">
           {/* Quick Currency Calculator */}
-          <Card className="border-primary/30 bg-gradient-to-br from-primary/5 via-background to-accent/5">
+          <Card className="border-primary/30 bg-gradient-to-br from-primary/5 via-background to-accent/5 w-full">
             <CardHeader className="pb-3">
               <CardTitle className={cn('text-base flex items-center gap-2', isRTL && 'font-arabic')}>
                 <div className="p-1.5 rounded-lg bg-primary/10">
@@ -514,14 +514,14 @@ export default function ZooliNews() {
               </div>
               
               {/* Results */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2 w-full">
                 {/* Bankak Rate */}
-                <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
+                <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20 min-w-0">
                   <p className={cn('text-xs text-muted-foreground mb-1', isRTL && 'font-arabic')}>
                     {isRTL ? 'سعر بنكك' : 'Bankak Rate'}
                   </p>
-                  <p className="text-xl font-bold text-primary">
-                    {bankakResult.toLocaleString('en-US', { maximumFractionDigits: 2 })}
+                  <p className="text-lg font-bold text-primary truncate">
+                    {bankakResult.toLocaleString('en-US', { maximumFractionDigits: 0 })}
                   </p>
                   <p className={cn('text-xs text-muted-foreground', isRTL && 'font-arabic')}>
                     {isRTL ? 'جنيه سوداني' : 'SDG'}
@@ -529,12 +529,12 @@ export default function ZooliNews() {
                 </div>
                 
                 {/* Parallel Market Rate */}
-                <div className="p-3 rounded-xl bg-accent/10 border border-accent/20">
+                <div className="p-2.5 rounded-xl bg-accent/10 border border-accent/20 min-w-0">
                   <p className={cn('text-xs text-muted-foreground mb-1', isRTL && 'font-arabic')}>
                     {isRTL ? 'السوق الموازي' : 'Parallel Market'}
                   </p>
-                  <p className="text-xl font-bold text-accent">
-                    {parallelResult.toLocaleString('en-US', { maximumFractionDigits: 2 })}
+                  <p className="text-lg font-bold text-accent truncate">
+                    {parallelResult.toLocaleString('en-US', { maximumFractionDigits: 0 })}
                   </p>
                   <p className={cn('text-xs text-muted-foreground', isRTL && 'font-arabic')}>
                     {isRTL ? 'جنيه سوداني' : 'SDG'}

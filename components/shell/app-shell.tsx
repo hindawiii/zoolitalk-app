@@ -99,7 +99,7 @@ export function AppShell() {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto content-area">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden content-area w-full max-w-full">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -108,7 +108,7 @@ export function AppShell() {
             animate="enter"
             exit="exit"
             transition={{ duration: 0.2, ease: 'easeInOut' }}
-            className="min-h-full"
+            className="min-h-full w-full max-w-full"
           >
             <React.Suspense fallback={<JabanaLoader />}>
               <ActiveModule />
