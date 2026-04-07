@@ -57,16 +57,16 @@ const mockGallery: GalleryItem[] = [
 
 export default function ZoolProfile() {
   const { isRTL, t } = useLanguage()
-  const { currentUser, followers, following } = useUserStore()
+  const { currentUser, followingIds } = useUserStore()
   const { setSettingsOpen, triggerGift } = useAppStore()
   const [activeTab, setActiveTab] = React.useState('posts')
   const [selectedImage, setSelectedImage] = React.useState<GalleryItem | null>(null)
 
   const stats = [
     { label: isRTL ? 'المنشورات' : 'Posts', value: mockGallery.length },
-    { label: isRTL ? 'المتابعين' : 'Followers', value: followers.length || 1234 },
-    { label: isRTL ? 'يتابع' : 'Following', value: following.length || 567 },
-    { label: isRTL ? 'نقاط زول' : 'Zool Points', value: currentUser?.zoolPoints || 2500 },
+    { label: isRTL ? 'المتابعين' : 'Followers', value: currentUser?.followers ?? 1234 },
+    { label: isRTL ? 'يتابع' : 'Following', value: currentUser?.following ?? followingIds.length },
+    { label: isRTL ? 'نقاط زول' : 'Zool Points', value: currentUser?.zoolPoints ?? 2500 },
   ]
 
   // Format numbers

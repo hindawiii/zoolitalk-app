@@ -57,9 +57,9 @@ export default function AlSaha() {
               )}>
                 {t('feed.whatsNew')}
               </span>
-              <Button size="icon" variant="ghost" className="rounded-full bg-primary/10 text-primary">
+              <div className="h-9 w-9 flex items-center justify-center rounded-full bg-primary/10 text-primary">
                 <Plus className="h-5 w-5" />
-              </Button>
+              </div>
             </button>
           </div>
 

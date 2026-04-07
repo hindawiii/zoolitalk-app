@@ -25,12 +25,12 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Zoolitalk - الراكوبة الرقمية',
+  title: 'Zooli Talk - زولي توك | الراكوبة الرقمية',
   description: 'The Sudanese Super-App: Chat, Social Feed, Marketplace, News & More',
   generator: 'v0.app',
-  applicationName: 'Zoolitalk',
-  keywords: ['Sudan', 'Social', 'Chat', 'Marketplace', 'News', 'Arabic'],
-  authors: [{ name: 'Zoolitalk Team' }],
+  applicationName: 'Zooli Talk',
+  keywords: ['Sudan', 'Social', 'Chat', 'Marketplace', 'News', 'Arabic', 'Zooli Talk'],
+  authors: [{ name: 'Zooli Talk Team' }],
   icons: {
     icon: [
       { url: '/icon-light-32x32.png', media: '(prefers-color-scheme: light)' },
