@@ -159,7 +159,7 @@ export function ChatView({ onBack }: ChatViewProps) {
   if (!chat) return null
 
   return (
-    <div className="flex flex-col h-full bg-background w-full max-w-full overflow-x-hidden">
+    <div className="flex flex-col h-full bg-background w-full max-w-full overflow-x-relative">
       {/* Header */}
       <header className="flex items-center gap-3 px-2 py-2 bg-card border-b">
         <Button variant="ghost" size="icon" onClick={onBack}>
