@@ -50,6 +50,7 @@ import { useUserStore } from '@/lib/stores/user-store'
 import { useLanguage } from '@/components/providers/language-provider'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { RakobaLogo } from '@/components/ui/rakoba-logo'
 
 interface SettingsSection {
   title: string
@@ -356,7 +357,8 @@ export function SettingsDrawer() {
             </Button>
 
             {/* App Info Footer */}
-            <div className="text-center py-4">
+            <div className="flex flex-col items-center justify-center py-4 gap-2">
+              <RakobaLogo size="lg" />
               <p className={cn('text-lg font-semibold text-primary', isRTL && 'font-arabic')}>
                 {t('app.name')}
               </p>

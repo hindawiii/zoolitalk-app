@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { 
   MessageCircle, 
@@ -30,6 +31,12 @@ const navItems: NavItem[] = [
 export function BottomNavigation() {
   const { activeTab, setActiveTab } = useAppStore()
   const { t, isRTL } = useLanguage()
+  const router = useRouter()
+
+  const handleTabChange = (tabId: TabId) => {
+    setActiveTab(tabId)
+    router.replace(`?tab=${tabId}`, { scroll: false })
+  }
 
   return (
     <nav className="bottom-nav w-full max-w-full overflow-x-hidden" role="navigation" aria-label="Main navigation">
@@ -41,7 +48,7 @@ export function BottomNavigation() {
           return (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => handleTabChange(item.id)}
               className={cn(
                 'relative flex flex-col items-center justify-center gap-0.5 px-3 py-2 rounded-xl transition-colors min-w-[60px]',
                 'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',

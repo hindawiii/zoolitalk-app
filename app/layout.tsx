@@ -25,12 +25,12 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Zooli Talk - زولي توك | الراكوبة الرقمية',
+  title: 'راكوبتنا - Rakobatna | الراكوبة الرقمية',
   description: 'The Sudanese Super-App: Chat, Social Feed, Marketplace, News & More',
   generator: 'v0.app',
-  applicationName: 'Zooli Talk',
-  keywords: ['Sudan', 'Social', 'Chat', 'Marketplace', 'News', 'Arabic', 'Zooli Talk'],
-  authors: [{ name: 'Zooli Talk Team' }],
+  applicationName: 'Rakobatna',
+  keywords: ['Sudan', 'Social', 'Chat', 'Marketplace', 'News', 'Arabic', 'Rakobatna', 'راكوبتنا'],
+  authors: [{ name: 'Rakobatna Team' }],
   icons: {
     icon: [
       { url: '/icon-light-32x32.png', media: '(prefers-color-scheme: light)' },
@@ -47,8 +47,8 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#0d9488' },
-    { media: '(prefers-color-scheme: dark)', color: '#14b8a6' },
+    { media: '(prefers-color-scheme: light)', color: '#008000' },
+    { media: '(prefers-color-scheme: dark)', color: '#228B22' },
   ],
 }
 

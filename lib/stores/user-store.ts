@@ -59,7 +59,7 @@ export const useUserStore = create<UserState>()(
         id: 'user-1',
         name: 'Ahmed Mohamed',
         nameAr: 'أحمد محمد',
-        email: 'ahmed@zoolitalk.sd',
+        email: 'ahmed@rakobatna.sd',
         phone: '+249912345678',
         avatar: '/avatars/default.jpg',
         coverPhoto: '/covers/default.jpg',
@@ -118,7 +118,7 @@ export const useUserStore = create<UserState>()(
         })),
     }),
     {
-      name: 'zoolitalk-user-storage',
+      name: 'rakobatna-user-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         currentUser: state.currentUser,

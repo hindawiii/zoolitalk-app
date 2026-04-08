@@ -253,7 +253,7 @@ export const useChatStore = create<ChatState>()(
       setRecordingDuration: (recordingDuration) => set({ recordingDuration }),
     }),
     {
-      name: 'zoolitalk-chat-storage',
+      name: 'rakobatna-chat-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         chats: state.chats,

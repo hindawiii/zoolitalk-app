@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Settings } from 'lucide-react'
 import { BottomNavigation } from './bottom-navigation'
@@ -8,7 +9,17 @@ import { SettingsDrawer } from './settings-drawer'
 import { useAppStore, type TabId } from '@/lib/stores/app-store'
 import { useLanguage } from '@/components/providers/language-provider'
 import { Button } from '@/components/ui/button'
+import { RakobaLogo } from '@/components/ui/rakoba-logo'
 import { cn } from '@/lib/utils'
+
+// Map URL tab params to TabIds
+const tabParamMap: Record<string, TabId> = {
+  wansa: 'wansa',
+  saha: 'saha',
+  souq: 'souq',
+  news: 'news',
+  profile: 'profile',
+}
 
 // Lazy load module components
 const AlWansa = React.lazy(() => import('@/components/modules/al-wansa'))
@@ -26,37 +37,14 @@ const tabComponents: Record<TabId, React.LazyExoticComponent<React.ComponentType
   profile: ZoolProfile,
 }
 
-// Loading fallback with Jabana spinner
-function JabanaLoader() {
+// Loading fallback with Rakoba spinner
+function RakobaLoader() {
   const { isRTL } = useLanguage()
   
   return (
     <div className="flex flex-col items-center justify-center h-full gap-4">
-      <div className="jabana-loader w-16 h-16">
-        <svg viewBox="0 0 64 64" className="w-full h-full">
-          <defs>
-            <linearGradient id="jabanaLoaderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="var(--primary)" />
-              <stop offset="100%" stopColor="var(--accent)" />
-            </linearGradient>
-          </defs>
-          {/* Simplified Jabana pot */}
-          <ellipse cx="32" cy="48" rx="20" ry="12" fill="url(#jabanaLoaderGrad)" />
-          <path d="M12 48 Q8 32 18 26 L46 26 Q56 32 52 48" fill="url(#jabanaLoaderGrad)" />
-          {/* Spout */}
-          <path d="M52 34 Q60 28 62 22" fill="none" stroke="var(--primary)" strokeWidth="3" strokeLinecap="round" />
-          {/* Handle */}
-          <path d="M12 34 Q2 38 6 48 Q10 54 14 50" fill="none" stroke="var(--primary)" strokeWidth="3" />
-          {/* Steam */}
-          <circle cx="28" cy="18" r="2" fill="var(--muted-foreground)" opacity="0.6">
-            <animate attributeName="cy" values="18;10;18" dur="1.5s" repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0.6;0.2;0.6" dur="1.5s" repeatCount="indefinite" />
-          </circle>
-          <circle cx="36" cy="16" r="2" fill="var(--muted-foreground)" opacity="0.4">
-            <animate attributeName="cy" values="16;8;16" dur="1.8s" repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0.4;0.1;0.4" dur="1.8s" repeatCount="indefinite" />
-          </circle>
-        </svg>
+      <div className="animate-pulse">
+        <RakobaLogo size="lg" />
       </div>
       <p className={cn('text-sm text-muted-foreground', isRTL && 'font-arabic')}>
         {isRTL ? 'جاري التحميل...' : 'Loading...'}
@@ -73,8 +61,27 @@ const pageVariants = {
 }
 
 export function AppShell() {
-  const { activeTab, setSettingsOpen } = useAppStore()
+  const { activeTab, setActiveTab, setSettingsOpen } = useAppStore()
   const { t, isRTL } = useLanguage()
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  
+  // Sync tab from URL on mount
+  React.useEffect(() => {
+    const tabParam = searchParams.get('tab')
+    if (tabParam && tabParamMap[tabParam] && tabParamMap[tabParam] !== activeTab) {
+      setActiveTab(tabParamMap[tabParam])
+    }
+  }, [searchParams, setActiveTab, activeTab])
+  
+  // Update URL when tab changes
+  React.useEffect(() => {
+    const currentTabParam = searchParams.get('tab')
+    if (currentTabParam !== activeTab) {
+      const newUrl = `?tab=${activeTab}`
+      router.replace(newUrl, { scroll: false })
+    }
+  }, [activeTab, searchParams, router])
   
   const ActiveModule = tabComponents[activeTab]
 
@@ -82,12 +89,15 @@ export function AppShell() {
     <div className="relative flex flex-col min-h-dvh bg-background w-full max-w-full overflow-x-hidden">
       {/* Header */}
       <header className="sticky top-0 z-30 flex items-center justify-between h-14 px-4 bg-card/80 backdrop-blur-md border-b w-full max-w-full">
-        <h1 className={cn(
-          'text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent',
-          isRTL && 'font-arabic'
-        )}>
-          {t('app.name')}
-        </h1>
+        <div className="flex items-center gap-2">
+          <RakobaLogo size="sm" />
+          <h1 className={cn(
+            'text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent',
+            isRTL && 'font-arabic'
+          )}>
+            {t('app.name')}
+          </h1>
+        </div>
         <Button
           variant="ghost"
           size="icon"
@@ -110,7 +120,7 @@ export function AppShell() {
             transition={{ duration: 0.2, ease: 'easeInOut' }}
             className="min-h-full w-full max-w-full overflow-x-hidden box-border"
           >
-            <React.Suspense fallback={<JabanaLoader />}>
+            <React.Suspense fallback={<RakobaLoader />}>
               <ActiveModule />
             </React.Suspense>
           </motion.div>
