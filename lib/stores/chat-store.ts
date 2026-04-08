@@ -290,6 +290,17 @@ const demoChats: Chat[] = [
     unreadCount: 0,
     isOnline: true,
   },
+  {
+    id: 'chat-20',
+    type: 'private',
+    name: ' Mohamed Faisal',
+    nameAr: 'محمد فيصل',
+    avatar: '/avatars/jack.jpg',
+    lastMessage: 'اسمعني انا جاي عليكم البيت',
+    lastMessageTime: new Date(Date.now() - 1000 * 60 * 45),
+    unreadCount: 0,
+    isOnline: true,
+  },
 ]
 
 // Demo messages
