@@ -85,7 +85,7 @@ export default function SouqAlJumaa() {
   const selectedListing = listings.find((l) => l.id === selectedListingId)
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full w-full max-w-full overflow-x-hidden">
       {/* Detail View */}
       <AnimatePresence>
         {selectedListing && (
@@ -171,8 +171,8 @@ export default function SouqAlJumaa() {
       </div>
 
       {/* Categories */}
-      <div className="px-4 py-3 border-b overflow-x-auto">
-        <div className="flex gap-2">
+      <div className="px-4 py-3 border-b overflow-x-auto overflow-y-hidden w-full max-w-full">
+        <div className="flex gap-2 w-max">
           {/* All category */}
           <button
             onClick={() => setActiveCategory('all')}

@@ -112,7 +112,7 @@ export default function ZoolProfile() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-full bg-background w-full max-w-full overflow-x-hidden">
       <ScrollArea className="flex-1">
         {/* Cover Photo */}
         <div className="relative h-40 bg-gradient-to-br from-primary via-primary/80 to-accent">

@@ -79,9 +79,9 @@ export function AppShell() {
   const ActiveModule = tabComponents[activeTab]
 
   return (
-    <div className="relative flex flex-col min-h-dvh bg-background">
+    <div className="relative flex flex-col min-h-dvh bg-background w-full max-w-full overflow-x-hidden">
       {/* Header */}
-      <header className="sticky top-0 z-30 flex items-center justify-between h-14 px-4 bg-card/80 backdrop-blur-md border-b">
+      <header className="sticky top-0 z-30 flex items-center justify-between h-14 px-4 bg-card/80 backdrop-blur-md border-b w-full max-w-full">
         <h1 className={cn(
           'text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent',
           isRTL && 'font-arabic'
@@ -99,7 +99,7 @@ export function AppShell() {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto overflow-x-hidden content-area w-full max-w-full">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden content-area w-full max-w-full box-border">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -108,7 +108,7 @@ export function AppShell() {
             animate="enter"
             exit="exit"
             transition={{ duration: 0.2, ease: 'easeInOut' }}
-            className="min-h-full w-full max-w-full"
+            className="min-h-full w-full max-w-full overflow-x-hidden box-border"
           >
             <React.Suspense fallback={<JabanaLoader />}>
               <ActiveModule />

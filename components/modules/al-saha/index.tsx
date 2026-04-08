@@ -19,7 +19,7 @@ export default function AlSaha() {
   const [showCreatePost, setShowCreatePost] = React.useState(false)
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full w-full max-w-full overflow-x-hidden">
       {/* Header */}
       <div className="px-4 py-3 border-b bg-card/50">
         <div className="flex items-center justify-between">
@@ -64,8 +64,8 @@ export default function AlSaha() {
           </div>
 
           {/* Stories Row (Simplified) */}
-          <div className="px-4 py-3 border-b overflow-x-auto">
-            <div className="flex gap-3">
+          <div className="px-4 py-3 border-b overflow-x-auto overflow-y-hidden w-full max-w-full">
+            <div className="flex gap-3 w-max">
               {/* Add Story */}
               <div className="flex flex-col items-center gap-1 flex-shrink-0">
                 <div className="relative">

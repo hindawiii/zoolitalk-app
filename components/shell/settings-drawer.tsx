@@ -96,9 +96,9 @@ export function SettingsDrawer() {
   // Blocklist view
   if (showBlocklist) {
     return (
-      <Drawer open={isSettingsOpen} onOpenChange={setSettingsOpen} direction={isRTL ? 'right' : 'left'}>
-        <DrawerContent className={cn(isRTL && 'font-arabic')}>
-          <DrawerHeader className="flex flex-row items-center gap-3 border-b">
+<Drawer open={isSettingsOpen} onOpenChange={setSettingsOpen} direction={isRTL ? 'right' : 'left'}>
+        <DrawerContent className={cn('w-full max-w-full overflow-x-hidden', isRTL && 'font-arabic')}>
+          <DrawerHeader className="flex flex-row items-center gap-3 border-b w-full">
             <Button variant="ghost" size="icon" onClick={() => setShowBlocklist(false)}>
               {isRTL ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
             </Button>
