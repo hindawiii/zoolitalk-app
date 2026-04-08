@@ -10,7 +10,7 @@ export default function AlWansa() {
   const { activeChatId, setActiveChatId } = useChatStore()
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col w-full max-w-full overflow-x-hidden">
       <AnimatePresence mode="wait">
         {activeChatId ? (
           <motion.div
@@ -19,7 +19,7 @@ export default function AlWansa() {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="h-full"
+            className="h-full w-full max-w-full"
           >
             <ChatView onBack={() => setActiveChatId(null)} />
           </motion.div>
@@ -30,7 +30,7 @@ export default function AlWansa() {
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="h-full"
+            className="h-full w-full max-w-full"
           >
             <ChatList />
           </motion.div>

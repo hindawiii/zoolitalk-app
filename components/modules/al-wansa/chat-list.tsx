@@ -36,7 +36,7 @@ export function ChatList() {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full w-full max-w-full overflow-x-hidden">
       {/* Header */}
       <div className="p-4 space-y-3">
         <div className="flex items-center justify-between">
