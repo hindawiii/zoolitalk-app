@@ -31,6 +31,13 @@ export function BottomNavigation() {
   const { activeTab, setActiveTab } = useAppStore()
   const { t, isRTL } = useLanguage()
 
+  const handleTabChange = (tabId: TabId) => {
+    // Only update if tab is different - prevents unnecessary re-renders
+    if (tabId !== activeTab) {
+      setActiveTab(tabId)
+    }
+  }
+
   return (
     <nav className="bottom-nav w-full max-w-full overflow-x-hidden" role="navigation" aria-label="Main navigation">
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-2 w-full">
@@ -41,7 +48,7 @@ export function BottomNavigation() {
           return (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => handleTabChange(item.id)}
               className={cn(
                 'relative flex flex-col items-center justify-center gap-0.5 px-3 py-2 rounded-xl transition-colors min-w-[60px]',
                 'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',

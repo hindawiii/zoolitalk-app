@@ -8,6 +8,7 @@ import { SettingsDrawer } from './settings-drawer'
 import { useAppStore, type TabId } from '@/lib/stores/app-store'
 import { useLanguage } from '@/components/providers/language-provider'
 import { Button } from '@/components/ui/button'
+import { RakobaLogo } from '@/components/ui/rakoba-logo'
 import { cn } from '@/lib/utils'
 
 // Lazy load module components
@@ -26,7 +27,7 @@ const tabComponents: Record<TabId, React.LazyExoticComponent<React.ComponentType
   profile: ZoolProfile,
 }
 
-// Loading fallback with Jabana spinner
+// Loading fallback with Jabana spinner (Sudanese coffee pot with steam)
 function JabanaLoader() {
   const { isRTL } = useLanguage()
   
@@ -36,25 +37,29 @@ function JabanaLoader() {
         <svg viewBox="0 0 64 64" className="w-full h-full">
           <defs>
             <linearGradient id="jabanaLoaderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="var(--primary)" />
-              <stop offset="100%" stopColor="var(--accent)" />
+              <stop offset="0%" stopColor="#008000" />
+              <stop offset="100%" stopColor="#8B4513" />
             </linearGradient>
           </defs>
-          {/* Simplified Jabana pot */}
+          {/* Jabana pot body */}
           <ellipse cx="32" cy="48" rx="20" ry="12" fill="url(#jabanaLoaderGrad)" />
           <path d="M12 48 Q8 32 18 26 L46 26 Q56 32 52 48" fill="url(#jabanaLoaderGrad)" />
           {/* Spout */}
-          <path d="M52 34 Q60 28 62 22" fill="none" stroke="var(--primary)" strokeWidth="3" strokeLinecap="round" />
+          <path d="M52 34 Q60 28 62 22" fill="none" stroke="#8B4513" strokeWidth="3" strokeLinecap="round" />
           {/* Handle */}
-          <path d="M12 34 Q2 38 6 48 Q10 54 14 50" fill="none" stroke="var(--primary)" strokeWidth="3" />
-          {/* Steam */}
-          <circle cx="28" cy="18" r="2" fill="var(--muted-foreground)" opacity="0.6">
+          <path d="M12 34 Q2 38 6 48 Q10 54 14 50" fill="none" stroke="#8B4513" strokeWidth="3" />
+          {/* Steam animation */}
+          <circle cx="28" cy="18" r="2" fill="#008000" opacity="0.6">
             <animate attributeName="cy" values="18;10;18" dur="1.5s" repeatCount="indefinite" />
             <animate attributeName="opacity" values="0.6;0.2;0.6" dur="1.5s" repeatCount="indefinite" />
           </circle>
-          <circle cx="36" cy="16" r="2" fill="var(--muted-foreground)" opacity="0.4">
+          <circle cx="36" cy="16" r="2" fill="#008000" opacity="0.4">
             <animate attributeName="cy" values="16;8;16" dur="1.8s" repeatCount="indefinite" />
             <animate attributeName="opacity" values="0.4;0.1;0.4" dur="1.8s" repeatCount="indefinite" />
+          </circle>
+          <circle cx="32" cy="14" r="2.5" fill="#228B22" opacity="0.5">
+            <animate attributeName="cy" values="14;6;14" dur="2s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0.5;0.15;0.5" dur="2s" repeatCount="indefinite" />
           </circle>
         </svg>
       </div>
@@ -82,12 +87,15 @@ export function AppShell() {
     <div className="relative flex flex-col min-h-dvh bg-background w-full max-w-full overflow-x-hidden">
       {/* Header */}
       <header className="sticky top-0 z-30 flex items-center justify-between h-14 px-4 bg-card/80 backdrop-blur-md border-b w-full max-w-full">
-        <h1 className={cn(
-          'text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent',
-          isRTL && 'font-arabic'
-        )}>
-          {t('app.name')}
-        </h1>
+        <div className="flex items-center gap-2">
+          <RakobaLogo size="sm" />
+          <h1 className={cn(
+            'text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent',
+            isRTL && 'font-arabic'
+          )}>
+            {t('app.name')}
+          </h1>
+        </div>
         <Button
           variant="ghost"
           size="icon"

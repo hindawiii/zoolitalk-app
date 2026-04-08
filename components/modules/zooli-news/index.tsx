@@ -303,8 +303,8 @@ export default function ZooliNews() {
       ? (isRTL ? 'منحة دراسية' : 'scholarship') 
       : (isRTL ? 'فرصة عمل' : 'job opportunity')
     const message = isRTL 
-      ? `شوف الـ${typeLabel} دي على زولي توك: ${title}` 
-      : `Check out this ${typeLabel} on Zooli Talk: ${title}`
+      ? `شوف الـ${typeLabel} دي على راكوبتنا: ${title}` 
+      : `Check out this ${typeLabel} on Rakobatna: ${title}`
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`
     window.open(whatsappUrl, '_blank')
   }
@@ -430,7 +430,7 @@ export default function ZooliNews() {
       <header className="px-4 py-4 border-b space-y-4 w-full">
         <div className="flex items-center justify-between">
           <h1 className={cn('text-2xl font-bold', isRTL && 'font-arabic')}>
-            {isRTL ? 'زولي نيوز' : 'Zooli News'}
+            {isRTL ? 'أخبار راكوبتنا' : 'Rakobatna News'}
           </h1>
           <Button 
             variant="ghost" 
@@ -444,7 +444,7 @@ export default function ZooliNews() {
 
         {/* Category Tabs */}
         <Tabs value={activeCategory} onValueChange={(v) => setActiveCategory(v as NewsCategory | 'all')}>
-          <TabsList className="w-full justify-start overflow-x-auto">
+          <TabsList className="w-full justify-start overflow-x-auto scrollbar-hide">
             <TabsTrigger value="all" className={cn(isRTL && 'font-arabic')}>
               {isRTL ? 'الكل' : 'All'}
             </TabsTrigger>
@@ -566,7 +566,7 @@ export default function ZooliNews() {
               </div>
             </CardHeader>
             <CardContent className="pb-4">
-              <div className="flex gap-2 overflow-x-auto pb-2 -mx-2 px-2">
+              <div className="flex gap-2 overflow-x-auto pb-2 -mx-2 px-2 scrollbar-hide">
                 {mockCurrencyRates.map((currency) => (
                   <div 
                     key={currency.code}

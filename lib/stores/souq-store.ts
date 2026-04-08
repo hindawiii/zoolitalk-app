@@ -223,7 +223,7 @@ export const useSouqStore = create<SouqState>()(
       setPostingStep: (postingStep) => set({ postingStep }),
     }),
     {
-      name: 'zoolitalk-souq-storage',
+      name: 'rakobatna-souq-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         listings: state.listings,

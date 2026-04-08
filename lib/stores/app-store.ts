@@ -70,7 +70,7 @@ export const useAppStore = create<AppState>()(
       setShowOnlineStatus: (showOnlineStatus) => set({ showOnlineStatus }),
     }),
     {
-      name: 'zoolitalk-app-storage',
+      name: 'rakobatna-app-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         language: state.language,

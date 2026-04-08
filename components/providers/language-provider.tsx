@@ -16,7 +16,7 @@ const LanguageContext = React.createContext<LanguageContextType | null>(null)
 const translations: Record<Language, Record<string, string>> = {
   ar: {
     // App
-    'app.name': 'زولي توك',
+    'app.name': 'راكوبتنا',
     'app.tagline': 'الراكوبة الرقمية',
     
     // Navigation
@@ -111,7 +111,7 @@ const translations: Record<Language, Record<string, string>> = {
     'souq.step3': 'السعر',
     
     // News
-    'news.title': 'أخبار زولي',
+    'news.title': 'أخبار راكوبتنا',
     'news.sudan': 'السودان',
     'news.sports': 'الرياضة',
     'news.economy': 'الاقتصاد',
@@ -165,7 +165,7 @@ const translations: Record<Language, Record<string, string>> = {
   },
   en: {
     // App
-    'app.name': 'Zooli Talk',
+    'app.name': 'Rakobatna',
     'app.tagline': 'The Digital Rakoba',
     
     // Navigation
@@ -259,7 +259,7 @@ const translations: Record<Language, Record<string, string>> = {
     'souq.step3': 'Price',
     
     // News
-    'news.title': 'Zooli-News',
+    'news.title': 'Rakobatna News',
     'news.sudan': 'Sudan',
     'news.sports': 'Sports',
     'news.economy': 'Economy',

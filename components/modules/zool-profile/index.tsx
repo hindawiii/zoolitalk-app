@@ -186,7 +186,7 @@ export default function ZoolProfile() {
           <div className="text-center space-y-2">
             <div className="flex items-center justify-center gap-2">
               <h1 className={cn('text-2xl font-bold', isRTL && 'font-arabic')}>
-                {isRTL ? currentUser?.nameAr : currentUser?.name || (isRTL ? 'زول' : 'Zooli User')}
+                {isRTL ? currentUser?.nameAr : currentUser?.name || (isRTL ? 'مستخدم راكوبتنا' : 'Rakobatna User')}
               </h1>
               {currentUser?.isVerified && (
                 <Badge className="bg-primary/10 text-primary border-0">
@@ -196,7 +196,7 @@ export default function ZoolProfile() {
               )}
             </div>
 
-            <p className="text-muted-foreground text-sm">@{currentUser?.username || 'zooli_user'}</p>
+            <p className="text-muted-foreground text-sm">@{currentUser?.username || 'rakobatna_user'}</p>
 
             {currentUser?.bio && (
               <p className={cn(

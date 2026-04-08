@@ -210,7 +210,7 @@ export const useFeedStore = create<FeedState>()(
       setLoading: (isLoading) => set({ isLoading }),
     }),
     {
-      name: 'zoolitalk-feed-storage',
+      name: 'rakobatna-feed-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         posts: state.posts,
