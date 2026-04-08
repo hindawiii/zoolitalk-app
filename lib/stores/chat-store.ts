@@ -252,7 +252,7 @@ const demoChats: Chat[] = [
     name: 'Mogtaba',
     nameAr: 'مجتبى',
     avatar: '/avatars/mogtaba.jpg',
-    lastMessage: 'تم التعديل المطلوب',
+    lastMessage: 'تم تطبيق كل التعديلات المطلوب',
     lastMessageTime: new Date(),
     unreadCount: 0,
     isOnline: true,
