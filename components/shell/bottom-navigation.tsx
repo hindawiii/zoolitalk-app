@@ -1,7 +1,6 @@
 'use client'
 
 import * as React from 'react'
-import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { 
   MessageCircle, 
@@ -31,11 +30,12 @@ const navItems: NavItem[] = [
 export function BottomNavigation() {
   const { activeTab, setActiveTab } = useAppStore()
   const { t, isRTL } = useLanguage()
-  const router = useRouter()
 
   const handleTabChange = (tabId: TabId) => {
-    setActiveTab(tabId)
-    router.replace(`?tab=${tabId}`, { scroll: false })
+    // Only update if tab is different - prevents unnecessary re-renders
+    if (tabId !== activeTab) {
+      setActiveTab(tabId)
+    }
   }
 
   return (
