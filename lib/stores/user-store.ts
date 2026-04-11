@@ -1,7 +1,8 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 
-export type SocialStatus = 'single' | 'taken' | 'engaged' | 'married' | 'complicated'
+export type Gender = 'male' | 'female'
+export type SocialStatus = 'single' | 'taken' | 'engaged' | 'married' | 'complicated' | 'gave_up'
 export type ProfessionalStatus = 'student' | 'employee' | 'freelancer' | 'unemployed'
 export type UserRank = 'lion' | 'knight' | 'advisor' | 'newbie'
 
@@ -25,11 +26,13 @@ export interface User {
   lastSeen: Date | null
   isVerified?: boolean
   location?: string
+  // Gender for Arabic feminization
+  gender?: Gender
   // New Sudanese Identity Fields
   socialStatus?: SocialStatus
   professionalStatus?: ProfessionalStatus
   rank?: UserRank
-  rankTitle?: string // أسد، فارس، ناصح، راسطة
+  rankTitle?: string // أسد/لبوة، فارس/فارسة، ناصح/ناصحة، راسطة
   // Gifts received
   gifts?: ReceivedGift[]
   // Featured posts (highlights)
@@ -111,6 +114,7 @@ export const useUserStore = create<UserState>()(
         lastSeen: null,
         isVerified: true,
         location: 'الخرطوم',
+        gender: 'male',
         socialStatus: 'single',
         professionalStatus: 'freelancer',
         rank: 'knight',

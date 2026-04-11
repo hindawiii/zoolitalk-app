@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useFeedStore, type Post, type ReactionType } from '@/lib/stores/feed-store'
 import { useLanguage } from '@/components/providers/language-provider'
+import { useGender } from '@/hooks/use-gender'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
 import { ar, enUS } from 'date-fns/locale'
@@ -85,6 +86,7 @@ const reactions: { type: ReactionType; emoji: string; label: { ar: string; en: s
 export function PostCard({ post }: PostCardProps) {
   const { reactToPost, removeReaction } = useFeedStore()
   const { language, isRTL } = useLanguage()
+  const { interaction } = useGender()
   const [showReactions, setShowReactions] = React.useState(false)
   const [currentImageIndex, setCurrentImageIndex] = React.useState(0)
   const [isBookmarked, setIsBookmarked] = React.useState(false)

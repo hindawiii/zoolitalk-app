@@ -48,53 +48,39 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { useUserStore, type SocialStatus, type ProfessionalStatus, type ReceivedGift } from '@/lib/stores/user-store'
+import { useUserStore, type SocialStatus, type ProfessionalStatus, type ReceivedGift, type UserRank, type Gender } from '@/lib/stores/user-store'
 import { useAppStore } from '@/lib/stores/app-store'
 import { useLanguage } from '@/components/providers/language-provider'
+import { useGender } from '@/hooks/use-gender'
+import { SOCIAL_STATUS_LABELS, PROFESSIONAL_STATUS_LABELS, RANK_LABELS } from '@/lib/gender-utils'
 import { cn } from '@/lib/utils'
 
-// Status Labels
-const socialStatusLabels: Record<SocialStatus, { ar: string; en: string }> = {
-  single: { ar: 'سنجل', en: 'Single' },
-  taken: { ar: 'مرتبط', en: 'Taken' },
-  engaged: { ar: 'خاطب', en: 'Engaged' },
-  married: { ar: 'معرس', en: 'Married' },
-  complicated: { ar: 'سجمان ورمدان', en: 'Complicated' },
+// Professional Status Icons (labels come from gender-utils)
+const professionalStatusIcons: Record<ProfessionalStatus, React.ElementType> = {
+  student: GraduationCap,
+  employee: Briefcase,
+  freelancer: Sparkles,
+  unemployed: Star,
 }
 
-const professionalStatusLabels: Record<ProfessionalStatus, { ar: string; en: string; icon: React.ElementType }> = {
-  student: { ar: 'طالب', en: 'Student', icon: GraduationCap },
-  employee: { ar: 'موظف', en: 'Employee', icon: Briefcase },
-  freelancer: { ar: 'فريلانسر', en: 'Freelancer', icon: Sparkles },
-  unemployed: { ar: 'فارغ وشغل ما عندي', en: 'Unemployed', icon: Star },
-}
-
-// Rank configurations with animation styles
-const rankConfig = {
+// Rank configurations with animation styles (titles come from gender-utils based on user gender)
+const rankConfig: Record<UserRank, { gradient: string; animation: string; glowColor: string }> = {
   lion: {
-    titleAr: 'أسد/لبوة',
-    titleEn: 'Lion/Lioness',
     gradient: 'from-yellow-400 via-amber-500 to-yellow-600',
     animation: 'animate-spin-slow',
     glowColor: 'shadow-amber-500/50',
   },
   knight: {
-    titleAr: 'فارس',
-    titleEn: 'Knight',
     gradient: 'from-[#2D5A27] via-emerald-500 to-[#2D5A27]',
     animation: 'animate-pulse',
     glowColor: 'shadow-emerald-500/50',
   },
   advisor: {
-    titleAr: 'ناصح',
-    titleEn: 'Advisor',
     gradient: 'from-blue-400 via-indigo-500 to-blue-600',
     animation: '',
     glowColor: 'shadow-blue-500/50',
   },
   newbie: {
-    titleAr: 'راسطة',
-    titleEn: 'Newbie',
     gradient: 'from-gray-300 via-gray-400 to-gray-500',
     animation: '',
     glowColor: '',
@@ -266,6 +252,7 @@ export default function ZoolProfile() {
   const { isRTL, t } = useLanguage()
   const { currentUser, followingIds, updateProfile } = useUserStore()
   const { setSettingsOpen, triggerGift } = useAppStore()
+  const { socialStatus, professionalStatus, rank } = useGender()
   const [activeTab, setActiveTab] = React.useState('posts')
   const [selectedImage, setSelectedImage] = React.useState<GalleryItem | null>(null)
   const [giftsLoaded, setGiftsLoaded] = React.useState(false)
@@ -400,7 +387,7 @@ export default function ZoolProfile() {
                   >
                     {userRank === 'lion' && <Crown className="h-3 w-3 inline me-1" />}
                     {userRank === 'knight' && <Sword className="h-3 w-3 inline me-1" />}
-                    <span className="font-arabic">{isRTL ? rankInfo.titleAr : rankInfo.titleEn}</span>
+                    <span className="font-arabic">{rank(userRank)}</span>
                   </motion.div>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -441,20 +428,20 @@ export default function ZoolProfile() {
                   <Button variant="outline" size="sm" className="gap-1.5 font-arabic text-xs h-7">
                     <Heart className="h-3 w-3 text-pink-500" />
                     {currentUser?.socialStatus 
-                      ? (isRTL ? socialStatusLabels[currentUser.socialStatus].ar : socialStatusLabels[currentUser.socialStatus].en)
+                      ? socialStatus(currentUser.socialStatus)
                       : (isRTL ? 'الحالة' : 'Status')
                     }
                     <ChevronDown className="h-3 w-3" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="center" className="font-arabic">
-                  {Object.entries(socialStatusLabels).map(([key, value]) => (
+                  {(Object.keys(SOCIAL_STATUS_LABELS) as SocialStatus[]).map((key) => (
                     <DropdownMenuItem
                       key={key}
-                      onClick={() => updateProfile({ socialStatus: key as SocialStatus })}
+                      onClick={() => updateProfile({ socialStatus: key })}
                       className={currentUser?.socialStatus === key ? 'bg-primary/10' : ''}
                     >
-                      {isRTL ? value.ar : value.en}
+                      {socialStatus(key)}
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
@@ -465,28 +452,31 @@ export default function ZoolProfile() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-1.5 font-arabic text-xs h-7">
                     {currentUser?.professionalStatus && (
-                      React.createElement(professionalStatusLabels[currentUser.professionalStatus].icon, {
+                      React.createElement(professionalStatusIcons[currentUser.professionalStatus], {
                         className: 'h-3 w-3 text-[#2D5A27]'
                       })
                     )}
                     {currentUser?.professionalStatus 
-                      ? (isRTL ? professionalStatusLabels[currentUser.professionalStatus].ar : professionalStatusLabels[currentUser.professionalStatus].en)
+                      ? professionalStatus(currentUser.professionalStatus)
                       : (isRTL ? 'المهنة' : 'Work')
                     }
                     <ChevronDown className="h-3 w-3" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="center" className="font-arabic">
-                  {Object.entries(professionalStatusLabels).map(([key, value]) => (
-                    <DropdownMenuItem
-                      key={key}
-                      onClick={() => updateProfile({ professionalStatus: key as ProfessionalStatus })}
-                      className={currentUser?.professionalStatus === key ? 'bg-primary/10' : ''}
-                    >
-                      <value.icon className="h-4 w-4 me-2" />
-                      {isRTL ? value.ar : value.en}
-                    </DropdownMenuItem>
-                  ))}
+                  {(Object.keys(PROFESSIONAL_STATUS_LABELS) as ProfessionalStatus[]).map((key) => {
+                    const Icon = professionalStatusIcons[key]
+                    return (
+                      <DropdownMenuItem
+                        key={key}
+                        onClick={() => updateProfile({ professionalStatus: key })}
+                        className={currentUser?.professionalStatus === key ? 'bg-primary/10' : ''}
+                      >
+                        <Icon className="h-4 w-4 me-2" />
+                        {professionalStatus(key)}
+                      </DropdownMenuItem>
+                    )
+                  })}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
