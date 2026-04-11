@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import Image from 'next/image'
+import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Settings, 
   Grid3X3, 
@@ -13,30 +14,113 @@ import {
   Calendar,
   Link2,
   Edit3,
-  UserPlus,
-  MessageCircle,
   Award,
   ShieldCheck,
   MoreHorizontal,
-  ImagePlus
+  ImagePlus,
+  Gift,
+  Star,
+  MessageCircle,
+  Eye,
+  EyeOff,
+  Briefcase,
+  GraduationCap,
+  Sparkles,
+  Crown,
+  Sword,
+  ChevronDown,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
-import { useUserStore } from '@/lib/stores/user-store'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { useUserStore, type SocialStatus, type ProfessionalStatus, type ReceivedGift } from '@/lib/stores/user-store'
 import { useAppStore } from '@/lib/stores/app-store'
 import { useLanguage } from '@/components/providers/language-provider'
 import { cn } from '@/lib/utils'
 
-// Types
+// Status Labels
+const socialStatusLabels: Record<SocialStatus, { ar: string; en: string }> = {
+  single: { ar: 'سنجل', en: 'Single' },
+  taken: { ar: 'مرتبط', en: 'Taken' },
+  engaged: { ar: 'خاطب', en: 'Engaged' },
+  married: { ar: 'معرس', en: 'Married' },
+  complicated: { ar: 'سجمان ورمدان', en: 'Complicated' },
+}
+
+const professionalStatusLabels: Record<ProfessionalStatus, { ar: string; en: string; icon: React.ElementType }> = {
+  student: { ar: 'طالب', en: 'Student', icon: GraduationCap },
+  employee: { ar: 'موظف', en: 'Employee', icon: Briefcase },
+  freelancer: { ar: 'فريلانسر', en: 'Freelancer', icon: Sparkles },
+  unemployed: { ar: 'فارغ وشغل ما عندي', en: 'Unemployed', icon: Star },
+}
+
+// Rank configurations with animation styles
+const rankConfig = {
+  lion: {
+    titleAr: 'أسد/لبوة',
+    titleEn: 'Lion/Lioness',
+    gradient: 'from-yellow-400 via-amber-500 to-yellow-600',
+    animation: 'animate-spin-slow',
+    glowColor: 'shadow-amber-500/50',
+  },
+  knight: {
+    titleAr: 'فارس',
+    titleEn: 'Knight',
+    gradient: 'from-[#2D5A27] via-emerald-500 to-[#2D5A27]',
+    animation: 'animate-pulse',
+    glowColor: 'shadow-emerald-500/50',
+  },
+  advisor: {
+    titleAr: 'ناصح',
+    titleEn: 'Advisor',
+    gradient: 'from-blue-400 via-indigo-500 to-blue-600',
+    animation: '',
+    glowColor: 'shadow-blue-500/50',
+  },
+  newbie: {
+    titleAr: 'راسطة',
+    titleEn: 'Newbie',
+    gradient: 'from-gray-300 via-gray-400 to-gray-500',
+    animation: '',
+    glowColor: '',
+  },
+}
+
+// Gift categories
+const RAKOBA_GIFTS = {
+  heritage: [
+    { id: 'jabana', name: 'Jabana', nameAr: 'جبنة', emoji: '☕' },
+    { id: 'markoub', name: 'Markoub', nameAr: 'مركوب', emoji: '👞' },
+    { id: 'akkaz', name: 'Akkaz', nameAr: 'عكاز', emoji: '🦯' },
+  ],
+  flowers: [
+    { id: 'jasmine', name: 'Jasmine', nameAr: 'ياسمين', emoji: '🌸' },
+    { id: 'red-rose', name: 'Red Rose', nameAr: 'ورد أحمر', emoji: '🌹' },
+    { id: 'sunflower', name: 'Sunflower', nameAr: 'دوار الشمس', emoji: '🌻' },
+  ],
+  luxury: [
+    { id: 'gold-ring', name: 'Gold Ring', nameAr: 'خاتم ذهب', emoji: '💍' },
+    { id: 'diamond', name: 'Diamond', nameAr: 'ألماس', emoji: '💎' },
+    { id: 'car', name: 'Car', nameAr: 'سيارة', emoji: '🚗' },
+  ],
+}
+
+// Gallery item type
 interface GalleryItem {
   id: string
   type: 'image' | 'video'
@@ -55,12 +139,147 @@ const mockGallery: GalleryItem[] = [
   { id: '6', type: 'image', url: 'https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=400', thumbnail: 'https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=200', likes: 678 },
 ]
 
+// Animated Avatar Frame Component
+function AnimatedAvatarFrame({ 
+  rank, 
+  children 
+}: { 
+  rank: 'lion' | 'knight' | 'advisor' | 'newbie'
+  children: React.ReactNode 
+}) {
+  const config = rankConfig[rank]
+  
+  if (rank === 'newbie') {
+    return <div className="relative">{children}</div>
+  }
+
+  return (
+    <div className="relative">
+      {/* Animated rotating gradient border */}
+      <motion.div
+        className={cn(
+          'absolute -inset-2 rounded-full bg-gradient-to-r',
+          config.gradient,
+          'opacity-75 blur-sm',
+          config.glowColor,
+          'shadow-lg'
+        )}
+        animate={rank === 'lion' ? { rotate: 360 } : { scale: [1, 1.05, 1] }}
+        transition={
+          rank === 'lion' 
+            ? { duration: 8, repeat: Infinity, ease: 'linear' }
+            : { duration: 2, repeat: Infinity, ease: 'easeInOut' }
+        }
+      />
+      <motion.div
+        className={cn(
+          'absolute -inset-1.5 rounded-full bg-gradient-to-r',
+          config.gradient
+        )}
+        animate={rank === 'lion' ? { rotate: -360 } : {}}
+        transition={
+          rank === 'lion'
+            ? { duration: 6, repeat: Infinity, ease: 'linear' }
+            : {}
+        }
+      />
+      <div className="relative bg-background rounded-full p-1">
+        {children}
+      </div>
+    </div>
+  )
+}
+
+// Gift Card Component
+function GiftCard({ 
+  gift, 
+  isRTL 
+}: { 
+  gift: ReceivedGift
+  isRTL: boolean 
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="flex flex-col items-center gap-1 p-3 rounded-xl bg-secondary/50 min-w-[80px]"
+    >
+      <span className="text-2xl">{gift.giftEmoji}</span>
+      <span className="text-xs font-arabic text-center">
+        {isRTL ? gift.giftNameAr : gift.giftName}
+      </span>
+      <span className="text-[10px] text-muted-foreground font-arabic">
+        {gift.isPrivate ? (
+          <span className="flex items-center gap-1">
+            <EyeOff className="h-3 w-3" />
+            {isRTL ? 'فاعل خير' : 'Anonymous'}
+          </span>
+        ) : (
+          <span className="flex items-center gap-1">
+            <Eye className="h-3 w-3" />
+            {isRTL ? gift.senderNameAr : gift.senderName}
+          </span>
+        )}
+      </span>
+    </motion.div>
+  )
+}
+
+// Featured Post Card Component
+function FeaturedPostCard({ 
+  post, 
+  onClick 
+}: { 
+  post: { id: string; thumbnail: string; likes: number; comments: number }
+  onClick: () => void
+}) {
+  return (
+    <motion.button
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ scale: 1.02 }}
+      className="relative aspect-square w-32 rounded-xl overflow-hidden flex-shrink-0"
+      onClick={onClick}
+    >
+      <Image
+        src={post.thumbnail}
+        alt="Featured post"
+        fill
+        className="object-cover"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+      <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-white text-xs">
+        <span className="flex items-center gap-1">
+          <Heart className="h-3 w-3 fill-white" />
+          {post.likes}
+        </span>
+        <span className="flex items-center gap-1">
+          <MessageCircle className="h-3 w-3" />
+          {post.comments}
+        </span>
+      </div>
+    </motion.button>
+  )
+}
+
 export default function ZoolProfile() {
   const { isRTL, t } = useLanguage()
-  const { currentUser, followingIds } = useUserStore()
+  const { currentUser, followingIds, updateProfile } = useUserStore()
   const { setSettingsOpen, triggerGift } = useAppStore()
   const [activeTab, setActiveTab] = React.useState('posts')
   const [selectedImage, setSelectedImage] = React.useState<GalleryItem | null>(null)
+  const [giftsLoaded, setGiftsLoaded] = React.useState(false)
+  const [highlightsLoaded, setHighlightsLoaded] = React.useState(false)
+  
+  // Lazy load gifts and highlights
+  React.useEffect(() => {
+    const giftsTimer = setTimeout(() => setGiftsLoaded(true), 300)
+    const highlightsTimer = setTimeout(() => setHighlightsLoaded(true), 500)
+    return () => {
+      clearTimeout(giftsTimer)
+      clearTimeout(highlightsTimer)
+    }
+  }, [])
 
   const stats = [
     { label: isRTL ? 'المنشورات' : 'Posts', value: mockGallery.length },
@@ -69,12 +288,14 @@ export default function ZoolProfile() {
     { label: isRTL ? 'نقاط زول' : 'Zool Points', value: currentUser?.zoolPoints ?? 2500 },
   ]
 
-  // Format numbers
   const formatNumber = (num: number) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
     return num.toString()
   }
+
+  const userRank = currentUser?.rank || 'newbie'
+  const rankInfo = rankConfig[userRank]
 
   // Lightbox for images
   if (selectedImage) {
@@ -112,95 +333,168 @@ export default function ZoolProfile() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-background w-full max-w-full overflow-x-hidden">
-      <ScrollArea className="flex-1">
-        {/* Cover Photo */}
-        <div className="relative h-40 bg-gradient-to-br from-primary via-primary/80 to-accent">
-          {currentUser?.coverPhoto && (
-            <Image
-              src={currentUser.coverPhoto}
-              alt="Cover"
-              fill
-              className="object-cover"
-            />
-          )}
-          
-          {/* Settings Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn(
-              'absolute top-3 bg-background/30 backdrop-blur-sm hover:bg-background/50',
-              isRTL ? 'left-3' : 'right-3'
+    <TooltipProvider>
+      <div className="flex flex-col h-full bg-background w-full max-w-full overflow-x-hidden">
+        <ScrollArea className="flex-1">
+          {/* Cover Photo */}
+          <div className="relative h-40 bg-gradient-to-br from-[#2D5A27] via-[#2D5A27]/80 to-emerald-700">
+            {currentUser?.coverPhoto && (
+              <Image
+                src={currentUser.coverPhoto}
+                alt="Cover"
+                fill
+                className="object-cover"
+              />
             )}
-            onClick={() => setSettingsOpen(true)}
-          >
-            <Settings className="h-5 w-5 text-white" />
-          </Button>
-
-          {/* Edit Cover Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(
-              'absolute bottom-3 bg-background/30 backdrop-blur-sm hover:bg-background/50 text-white gap-1.5',
-              isRTL ? 'left-3' : 'right-3'
-            )}
-          >
-            <Camera className="h-4 w-4" />
-            <span className="text-xs">{isRTL ? 'تغيير' : 'Edit'}</span>
-          </Button>
-        </div>
-
-        {/* Profile Header */}
-        <div className="relative px-4 pb-4">
-          {/* Avatar */}
-          <div className="relative -mt-16 mb-4 flex justify-center">
-            <div className="relative">
-              <Avatar className="h-32 w-32 border-4 border-background shadow-lg">
-                <AvatarImage src={currentUser?.avatar} alt={currentUser?.name} />
-                <AvatarFallback className="text-3xl bg-primary text-primary-foreground">
-                  {currentUser?.name?.[0] || 'Z'}
-                </AvatarFallback>
-              </Avatar>
-              
-              {/* Verified Badge */}
-              {currentUser?.isVerified && (
-                <div className="absolute bottom-2 right-2 p-1 rounded-full bg-primary">
-                  <ShieldCheck className="h-4 w-4 text-primary-foreground" />
-                </div>
+            
+            {/* Settings Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn(
+                'absolute top-3 bg-background/30 backdrop-blur-sm hover:bg-background/50',
+                isRTL ? 'left-3' : 'right-3'
               )}
+              onClick={() => setSettingsOpen(true)}
+            >
+              <Settings className="h-5 w-5 text-white" />
+            </Button>
 
-              {/* Edit Avatar Button */}
-              <Button
-                variant="secondary"
-                size="icon"
-                className="absolute bottom-0 left-0 h-8 w-8 rounded-full shadow-md"
-              >
-                <Camera className="h-4 w-4" />
-              </Button>
-            </div>
+            {/* Edit Cover Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                'absolute bottom-3 bg-background/30 backdrop-blur-sm hover:bg-background/50 text-white gap-1.5',
+                isRTL ? 'left-3' : 'right-3'
+              )}
+            >
+              <Camera className="h-4 w-4" />
+              <span className="text-xs">{isRTL ? 'تغيير' : 'Edit'}</span>
+            </Button>
           </div>
 
-          {/* Name & Bio */}
-          <div className="text-center space-y-2">
-            <div className="flex items-center justify-center gap-2">
-              <h1 className={cn('text-2xl font-bold', isRTL && 'font-arabic')}>
-                {isRTL ? currentUser?.nameAr : currentUser?.name || (isRTL ? 'مستخدم راكوبتنا' : 'Rakobatna User')}
-              </h1>
-              {currentUser?.isVerified && (
-                <Badge className="bg-primary/10 text-primary border-0">
-                  <ShieldCheck className="h-3 w-3 me-1" />
-                  {isRTL ? 'موثق' : 'Verified'}
-                </Badge>
-              )}
+          {/* Profile Header */}
+          <div className="relative px-4 pb-4">
+            {/* Animated Avatar with Rank Frame */}
+            <div className="relative -mt-16 mb-4 flex justify-center">
+              <AnimatedAvatarFrame rank={userRank}>
+                <Avatar className="h-28 w-28 border-4 border-background shadow-lg">
+                  <AvatarImage src={currentUser?.avatar} alt={currentUser?.name} />
+                  <AvatarFallback className="text-3xl bg-[#2D5A27] text-white font-arabic">
+                    {currentUser?.nickname?.[0] || currentUser?.nameAr?.[0] || 'ز'}
+                  </AvatarFallback>
+                </Avatar>
+              </AnimatedAvatarFrame>
+              
+              {/* Rank Badge */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className={cn(
+                      'absolute -bottom-1 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold text-white bg-gradient-to-r',
+                      rankInfo.gradient
+                    )}
+                  >
+                    {userRank === 'lion' && <Crown className="h-3 w-3 inline me-1" />}
+                    {userRank === 'knight' && <Sword className="h-3 w-3 inline me-1" />}
+                    <span className="font-arabic">{isRTL ? rankInfo.titleAr : rankInfo.titleEn}</span>
+                  </motion.div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="font-arabic">{isRTL ? 'رتبتك بناءً على نشاطك' : 'Your rank based on activity'}</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
 
-            <p className="text-muted-foreground text-sm">@{currentUser?.username || 'rakobatna_user'}</p>
+            {/* Nickname (اللقب) - Prominent Display */}
+            <div className="text-center space-y-1">
+              {currentUser?.nickname && (
+                <motion.h1
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-2xl font-bold font-arabic text-[#2D5A27]"
+                >
+                  {currentUser.nickname}
+                </motion.h1>
+              )}
+              
+              <div className="flex items-center justify-center gap-2">
+                <p className={cn('text-base font-medium', isRTL && 'font-arabic')}>
+                  {isRTL ? currentUser?.nameAr : currentUser?.name || (isRTL ? 'مستخدم راكوبتنا' : 'Rakobatna User')}
+                </p>
+                {currentUser?.isVerified && (
+                  <ShieldCheck className="h-4 w-4 text-[#2D5A27]" />
+                )}
+              </div>
 
+              <p className="text-muted-foreground text-sm">@{currentUser?.username || 'rakobatna_user'}</p>
+            </div>
+
+            {/* Status Badges Row */}
+            <div className="flex items-center justify-center gap-2 mt-3 flex-wrap">
+              {/* Social Status Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5 font-arabic text-xs h-7">
+                    <Heart className="h-3 w-3 text-pink-500" />
+                    {currentUser?.socialStatus 
+                      ? (isRTL ? socialStatusLabels[currentUser.socialStatus].ar : socialStatusLabels[currentUser.socialStatus].en)
+                      : (isRTL ? 'الحالة' : 'Status')
+                    }
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="font-arabic">
+                  {Object.entries(socialStatusLabels).map(([key, value]) => (
+                    <DropdownMenuItem
+                      key={key}
+                      onClick={() => updateProfile({ socialStatus: key as SocialStatus })}
+                      className={currentUser?.socialStatus === key ? 'bg-primary/10' : ''}
+                    >
+                      {isRTL ? value.ar : value.en}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Professional Status Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5 font-arabic text-xs h-7">
+                    {currentUser?.professionalStatus && (
+                      React.createElement(professionalStatusLabels[currentUser.professionalStatus].icon, {
+                        className: 'h-3 w-3 text-[#2D5A27]'
+                      })
+                    )}
+                    {currentUser?.professionalStatus 
+                      ? (isRTL ? professionalStatusLabels[currentUser.professionalStatus].ar : professionalStatusLabels[currentUser.professionalStatus].en)
+                      : (isRTL ? 'المهنة' : 'Work')
+                    }
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="font-arabic">
+                  {Object.entries(professionalStatusLabels).map(([key, value]) => (
+                    <DropdownMenuItem
+                      key={key}
+                      onClick={() => updateProfile({ professionalStatus: key as ProfessionalStatus })}
+                      className={currentUser?.professionalStatus === key ? 'bg-primary/10' : ''}
+                    >
+                      <value.icon className="h-4 w-4 me-2" />
+                      {isRTL ? value.ar : value.en}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* Bio */}
             {currentUser?.bio && (
               <p className={cn(
-                'text-sm max-w-xs mx-auto',
+                'text-sm max-w-xs mx-auto text-center mt-3',
                 isRTL && 'font-arabic'
               )}>
                 {isRTL ? currentUser.bioAr : currentUser.bio}
@@ -208,11 +502,11 @@ export default function ZoolProfile() {
             )}
 
             {/* Location & Joined */}
-            <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+            <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground mt-2">
               {currentUser?.location && (
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1 font-arabic">
                   <MapPin className="h-3 w-3" />
-                  {isRTL ? 'الخرطوم، السودان' : 'Khartoum, Sudan'}
+                  {currentUser.location}
                 </span>
               )}
               <span className="flex items-center gap-1">
@@ -220,136 +514,194 @@ export default function ZoolProfile() {
                 {isRTL ? 'انضم في 2024' : 'Joined 2024'}
               </span>
             </div>
-          </div>
 
-          {/* Stats Bar */}
-          <div className="grid grid-cols-4 gap-2 mt-6 p-3 rounded-xl bg-secondary/50">
-            {stats.map((stat, idx) => (
-              <button
-                key={idx}
-                className="flex flex-col items-center gap-0.5 hover:bg-secondary rounded-lg p-2 transition-colors"
+            {/* Stats Bar */}
+            <div className="grid grid-cols-4 gap-2 mt-4 p-3 rounded-xl bg-secondary/50">
+              {stats.map((stat, idx) => (
+                <button
+                  key={idx}
+                  className="flex flex-col items-center gap-0.5 hover:bg-secondary rounded-lg p-2 transition-colors"
+                >
+                  <span className="text-lg font-bold text-[#2D5A27]">
+                    {formatNumber(stat.value)}
+                  </span>
+                  <span className={cn('text-[10px] text-muted-foreground', isRTL && 'font-arabic')}>
+                    {stat.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 mt-4">
+              <Button 
+                className="flex-1 gap-2" 
+                variant="outline"
+                onClick={() => setSettingsOpen(true)}
               >
-                <span className="text-lg font-bold text-primary">
-                  {formatNumber(stat.value)}
-                </span>
-                <span className={cn('text-[10px] text-muted-foreground', isRTL && 'font-arabic')}>
-                  {stat.label}
-                </span>
-              </button>
-            ))}
+                <Edit3 className="h-4 w-4" />
+                <span className="font-arabic">{isRTL ? 'تعديل الملف' : 'Edit Profile'}</span>
+              </Button>
+              <Button 
+                className="flex-1 gap-2 bg-[#2D5A27] hover:bg-[#2D5A27]/90 text-white"
+                onClick={() => triggerGift('jabana', currentUser?.name || 'User')}
+              >
+                <Gift className="h-4 w-4" />
+                <span className="font-arabic">{isRTL ? 'إرسال هدية' : 'Send Gift'}</span>
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align={isRTL ? 'start' : 'end'}>
+                  <DropdownMenuItem className={cn(isRTL && 'font-arabic')}>
+                    <Share2 className="h-4 w-4 me-2" />
+                    {isRTL ? 'مشاركة الملف' : 'Share Profile'}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className={cn(isRTL && 'font-arabic')}>
+                    <Link2 className="h-4 w-4 me-2" />
+                    {isRTL ? 'نسخ الرابط' : 'Copy Link'}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 mt-4">
-            <Button 
-              className="flex-1 gap-2" 
-              variant="outline"
-              onClick={() => setSettingsOpen(true)}
+          {/* Al-Saha Museum (Highlights) Section */}
+          {highlightsLoaded && currentUser?.featuredPosts && currentUser.featuredPosts.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="px-4 py-4 border-t"
             >
-              <Edit3 className="h-4 w-4" />
-              {isRTL ? 'تعديل الملف' : 'Edit Profile'}
-            </Button>
-            <Button 
-              className="flex-1 gap-2 bg-primary hover:bg-primary/90"
-              onClick={() => triggerGift('jabana', currentUser?.name || 'User')}
-            >
-              <Award className="h-4 w-4" />
-              {isRTL ? 'إرسال هدية' : 'Send Gift'}
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align={isRTL ? 'start' : 'end'}>
-                <DropdownMenuItem className={cn(isRTL && 'font-arabic')}>
-                  <Share2 className="h-4 w-4 me-2" />
-                  {isRTL ? 'مشاركة الملف' : 'Share Profile'}
-                </DropdownMenuItem>
-                <DropdownMenuItem className={cn(isRTL && 'font-arabic')}>
-                  <Link2 className="h-4 w-4 me-2" />
-                  {isRTL ? 'نسخ الرابط' : 'Copy Link'}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-
-        {/* Content Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
-          <TabsList className="w-full justify-around rounded-none border-b bg-transparent h-12">
-            <TabsTrigger 
-              value="posts" 
-              className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-            >
-              <Grid3X3 className="h-5 w-5" />
-            </TabsTrigger>
-            <TabsTrigger 
-              value="likes" 
-              className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-            >
-              <Heart className="h-5 w-5" />
-            </TabsTrigger>
-            <TabsTrigger 
-              value="saved" 
-              className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-            >
-              <Bookmark className="h-5 w-5" />
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="posts" className="mt-0">
-            {mockGallery.length > 0 ? (
-              <div className="grid grid-cols-3 gap-0.5">
-                {mockGallery.map((item) => (
-                  <button
-                    key={item.id}
-                    className="relative aspect-square bg-secondary overflow-hidden hover:opacity-90 transition-opacity"
-                    onClick={() => setSelectedImage(item)}
-                  >
-                    <Image
-                      src={item.thumbnail}
-                      alt="Gallery item"
-                      fill
-                      className="object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
-                      <div className="flex items-center gap-1 text-white text-sm font-medium">
-                        <Heart className="h-4 w-4 fill-white" />
-                        {formatNumber(item.likes)}
-                      </div>
-                    </div>
-                  </button>
-                ))}
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-bold font-arabic text-[#2D5A27]">
+                  {isRTL ? 'متحف الساحة' : 'Al-Saha Museum'}
+                </h3>
+                <Star className="h-4 w-4 text-[#2D5A27]" />
               </div>
-            ) : (
+              <ScrollArea className="w-full">
+                <div className="flex gap-3 pb-2">
+                  {currentUser.featuredPosts.map((post) => (
+                    <FeaturedPostCard
+                      key={post.id}
+                      post={post}
+                      onClick={() => setSelectedImage({
+                        id: post.id,
+                        type: 'image',
+                        url: post.thumbnail,
+                        thumbnail: post.thumbnail,
+                        likes: post.likes,
+                      })}
+                    />
+                  ))}
+                </div>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
+            </motion.div>
+          )}
+
+          {/* Gift Showcase (Karam System) Section */}
+          {giftsLoaded && currentUser?.gifts && currentUser.gifts.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="px-4 py-4 border-t"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-bold font-arabic text-[#2D5A27]">
+                  {isRTL ? 'هدايا الكرم' : 'Gift Showcase'}
+                </h3>
+                <Gift className="h-4 w-4 text-[#2D5A27]" />
+              </div>
+              <ScrollArea className="w-full">
+                <div className="flex gap-3 pb-2">
+                  {currentUser.gifts.map((gift) => (
+                    <GiftCard key={gift.id} gift={gift} isRTL={isRTL} />
+                  ))}
+                </div>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
+            </motion.div>
+          )}
+
+          {/* Content Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 border-t">
+            <TabsList className="w-full justify-around rounded-none border-b bg-transparent h-12">
+              <TabsTrigger 
+                value="posts" 
+                className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-[#2D5A27] data-[state=active]:bg-transparent"
+              >
+                <Grid3X3 className="h-5 w-5" />
+              </TabsTrigger>
+              <TabsTrigger 
+                value="likes" 
+                className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-[#2D5A27] data-[state=active]:bg-transparent"
+              >
+                <Heart className="h-5 w-5" />
+              </TabsTrigger>
+              <TabsTrigger 
+                value="saved" 
+                className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-[#2D5A27] data-[state=active]:bg-transparent"
+              >
+                <Bookmark className="h-5 w-5" />
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="posts" className="mt-0">
+              {mockGallery.length > 0 ? (
+                <div className="grid grid-cols-3 gap-0.5">
+                  {mockGallery.map((item) => (
+                    <button
+                      key={item.id}
+                      className="relative aspect-square bg-secondary overflow-hidden hover:opacity-90 transition-opacity"
+                      onClick={() => setSelectedImage(item)}
+                    >
+                      <Image
+                        src={item.thumbnail}
+                        alt="Gallery item"
+                        fill
+                        className="object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
+                        <div className="flex items-center gap-1 text-white text-sm font-medium">
+                          <Heart className="h-4 w-4 fill-white" />
+                          {formatNumber(item.likes)}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState 
+                  icon={ImagePlus}
+                  title={isRTL ? 'لا توجد منشورات' : 'No Posts Yet'}
+                  description={isRTL ? 'شارك أول صورة لك!' : 'Share your first photo!'}
+                />
+              )}
+            </TabsContent>
+
+            <TabsContent value="likes" className="mt-0">
               <EmptyState 
-                icon={ImagePlus}
-                title={isRTL ? 'لا توجد منشورات' : 'No Posts Yet'}
-                description={isRTL ? 'شارك أول صورة لك!' : 'Share your first photo!'}
+                icon={Heart}
+                title={isRTL ? 'لا توجد إعجابات' : 'No Likes Yet'}
+                description={isRTL ? 'المنشورات التي أعجبتك ستظهر هنا' : 'Posts you like will appear here'}
               />
-            )}
-          </TabsContent>
+            </TabsContent>
 
-          <TabsContent value="likes" className="mt-0">
-            <EmptyState 
-              icon={Heart}
-              title={isRTL ? 'لا توجد إعجابات' : 'No Likes Yet'}
-              description={isRTL ? 'المنشورات التي أعجبتك ستظهر هنا' : 'Posts you like will appear here'}
-            />
-          </TabsContent>
-
-          <TabsContent value="saved" className="mt-0">
-            <EmptyState 
-              icon={Bookmark}
-              title={isRTL ? 'لا توجد محفوظات' : 'No Saved Items'}
-              description={isRTL ? 'احفظ المنشورات للرجوع إليها لاحقاً' : 'Save posts to view them later'}
-            />
-          </TabsContent>
-        </Tabs>
-      </ScrollArea>
-    </div>
+            <TabsContent value="saved" className="mt-0">
+              <EmptyState 
+                icon={Bookmark}
+                title={isRTL ? 'لا توجد محفوظات' : 'No Saved Items'}
+                description={isRTL ? 'احفظ المنشورات للرجوع إليها لاحقاً' : 'Save posts to view them later'}
+              />
+            </TabsContent>
+          </Tabs>
+        </ScrollArea>
+      </div>
+    </TooltipProvider>
   )
 }
 
