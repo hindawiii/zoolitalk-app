@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+
 import { useChatStore, type Chat } from '@/lib/stores/chat-store'
 import { useLanguage } from '@/components/providers/language-provider'
 import { cn } from '@/lib/utils'
@@ -16,20 +16,20 @@ import { ar, enUS } from 'date-fns/locale'
 
 interface ChatListProps {
   onOpenSettings?: () => void
+  showArchived?: boolean
 }
 
-export function ChatList({ onOpenSettings }: ChatListProps) {
+export function ChatList({ onOpenSettings, showArchived = false }: ChatListProps) {
   const { chats, setActiveChatId, archiveChat, unarchiveChat, muteChat, unmuteChat, pinChat, unpinChat } = useChatStore()
   const { t, language, isRTL } = useLanguage()
   const [searchQuery, setSearchQuery] = React.useState('')
-  const [activeTab, setActiveTab] = React.useState<'all' | 'archived'>('all')
 
   // Filter and sort chats
   const filteredChats = React.useMemo(() => {
     let filtered = chats
     
-    // Filter by archive status
-    if (activeTab === 'archived') {
+    // Filter by archive status based on prop
+    if (showArchived) {
       filtered = filtered.filter(chat => chat.isArchived)
     } else {
       filtered = filtered.filter(chat => !chat.isArchived)
@@ -52,9 +52,7 @@ export function ChatList({ onOpenSettings }: ChatListProps) {
       if (!a.isPinned && b.isPinned) return 1
       return new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime()
     })
-  }, [chats, searchQuery, activeTab])
-
-  const archivedCount = chats.filter(c => c.isArchived).length
+  }, [chats, searchQuery, showArchived])
 
   const formatTime = (date: Date) => {
     return formatDistanceToNow(date, {
@@ -96,18 +94,6 @@ export function ChatList({ onOpenSettings }: ChatListProps) {
             className={cn('h-10 rounded-full bg-secondary/50', isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4')}
           />
         </div>
-
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'all' | 'archived')}>
-          <TabsList className="w-full grid grid-cols-2">
-            <TabsTrigger value="all" className={cn(isRTL && 'font-arabic')}>
-              {isRTL ? 'الكل' : 'All'}
-            </TabsTrigger>
-            <TabsTrigger value="archived" className={cn(isRTL && 'font-arabic')}>
-              {isRTL ? 'المؤرشف' : 'Archived'} {archivedCount > 0 && `(${archivedCount})`}
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
       </div>
 
       {/* Chat List */}
@@ -115,7 +101,7 @@ export function ChatList({ onOpenSettings }: ChatListProps) {
         <div className="px-2 pb-4">
           {filteredChats.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-              {activeTab === 'archived' ? (
+              {showArchived ? (
                 <>
                   <Archive className="h-12 w-12 mb-4 opacity-50" />
                   <p className={cn(isRTL && 'font-arabic')}>
