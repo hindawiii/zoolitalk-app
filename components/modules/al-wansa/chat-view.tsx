@@ -60,6 +60,7 @@ import {
 import { useChatStore, type Message } from '@/lib/stores/chat-store'
 import { useUserStore } from '@/lib/stores/user-store'
 import { useLanguage } from '@/components/providers/language-provider'
+import { useGender } from '@/hooks/use-gender'
 import { ChatBackgroundPattern, useChatTheme } from './chat-theme-provider'
 import { EmojiPicker, AnimatedEmoji, FlyingEmoji } from './animated-emoji'
 import { cn } from '@/lib/utils'
@@ -90,6 +91,7 @@ export function ChatView({ onBack, onOpenGames }: ChatViewProps) {
   } = useChatStore()
   const { currentUser } = useUserStore()
   const { t, language, isRTL } = useLanguage()
+  const { interaction, greeting } = useGender()
   
   const [inputValue, setInputValue] = React.useState('')
   const [selectedMessage, setSelectedMessage] = React.useState<Message | null>(null)
