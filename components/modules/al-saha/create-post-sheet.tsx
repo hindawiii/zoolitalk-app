@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Image as ImageIcon, Video, MapPin, X } from 'lucide-react'
+import { Image as ImageIcon, Video, MapPin, X, Clock, ChevronDown } from 'lucide-react'
 import {
   Sheet,
   SheetContent,
@@ -11,10 +11,37 @@ import {
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { useFeedStore, type Post } from '@/lib/stores/feed-store'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { useFeedStore, type Post, type PostExpiry } from '@/lib/stores/feed-store'
 import { useUserStore } from '@/lib/stores/user-store'
 import { useLanguage } from '@/components/providers/language-provider'
 import { cn } from '@/lib/utils'
+
+const expiryOptions: { value: PostExpiry; label: string }[] = [
+  { value: 'permanent', label: 'دائم' },
+  { value: '24h', label: '٢٤ ساعة' },
+  { value: '1week', label: 'أسبوع' },
+  { value: '1month', label: 'شهر' },
+]
+
+const getExpiryDate = (expiry: PostExpiry): Date | undefined => {
+  const now = new Date()
+  switch (expiry) {
+    case '24h':
+      return new Date(now.getTime() + 24 * 60 * 60 * 1000)
+    case '1week':
+      return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+    case '1month':
+      return new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+    default:
+      return undefined
+  }
+}
 
 interface CreatePostSheetProps {
   open: boolean
@@ -28,6 +55,7 @@ export function CreatePostSheet({ open, onOpenChange }: CreatePostSheetProps) {
   
   const [content, setContent] = React.useState('')
   const [images, setImages] = React.useState<string[]>([])
+  const [expiry, setExpiry] = React.useState<PostExpiry>('permanent')
   const [isSubmitting, setIsSubmitting] = React.useState(false)
 
   const handleSubmit = async () => {
@@ -48,6 +76,8 @@ export function CreatePostSheet({ open, onOpenChange }: CreatePostSheetProps) {
       commentsCount: 0,
       sharesCount: 0,
       timestamp: new Date(),
+      expiry: expiry,
+      expiresAt: getExpiryDate(expiry),
     }
 
     addPost(newPost)
@@ -55,6 +85,7 @@ export function CreatePostSheet({ open, onOpenChange }: CreatePostSheetProps) {
     
     setContent('')
     setImages([])
+    setExpiry('permanent')
     setIsSubmitting(false)
     onOpenChange(false)
   }
@@ -141,6 +172,33 @@ export function CreatePostSheet({ open, onOpenChange }: CreatePostSheetProps) {
               ))}
             </div>
           )}
+
+          {/* Post Expiry Selector */}
+          <div className="flex items-center justify-between pt-4 border-t">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Clock className="h-4 w-4" />
+              <span className="text-sm font-arabic">مدة المنشور:</span>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2 font-arabic">
+                  {expiryOptions.find(o => o.value === expiry)?.label}
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="font-arabic">
+                {expiryOptions.map((option) => (
+                  <DropdownMenuItem
+                    key={option.value}
+                    onClick={() => setExpiry(option.value)}
+                    className={expiry === option.value ? 'bg-primary/10' : ''}
+                  >
+                    {option.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
           {/* Media buttons */}
           <div className="flex items-center gap-2 pt-4 border-t">

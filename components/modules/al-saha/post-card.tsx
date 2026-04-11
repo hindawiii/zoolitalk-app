@@ -11,6 +11,7 @@ import {
   Bookmark,
   Volume2,
   VolumeX,
+  Clock,
 } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -25,6 +26,47 @@ import { useLanguage } from '@/components/providers/language-provider'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
 import { ar, enUS } from 'date-fns/locale'
+
+// Helper to calculate remaining time
+function useCountdown(expiresAt?: Date) {
+  const [timeLeft, setTimeLeft] = React.useState<string | null>(null)
+
+  React.useEffect(() => {
+    if (!expiresAt) {
+      setTimeLeft(null)
+      return
+    }
+
+    const updateTimeLeft = () => {
+      const now = new Date()
+      const diff = expiresAt.getTime() - now.getTime()
+      
+      if (diff <= 0) {
+        setTimeLeft('انتهى')
+        return
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60))
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+      
+      if (hours >= 24) {
+        const days = Math.floor(hours / 24)
+        setTimeLeft(`${days} يوم`)
+      } else if (hours > 0) {
+        setTimeLeft(`${hours}س ${minutes}د`)
+      } else {
+        setTimeLeft(`${minutes}د`)
+      }
+    }
+
+    updateTimeLeft()
+    const interval = setInterval(updateTimeLeft, 60000) // Update every minute
+    
+    return () => clearInterval(interval)
+  }, [expiresAt])
+
+  return timeLeft
+}
 
 interface PostCardProps {
   post: Post
@@ -48,6 +90,7 @@ export function PostCard({ post }: PostCardProps) {
   const [isBookmarked, setIsBookmarked] = React.useState(false)
   const [isMuted, setIsMuted] = React.useState(true)
   const longPressTimer = React.useRef<number | null>(null)
+  const countdown = useCountdown(post.expiresAt)
 
   const formatTime = (date: Date) => {
     return formatDistanceToNow(date, {
@@ -86,7 +129,19 @@ export function PostCard({ post }: PostCardProps) {
   const currentReaction = reactions.find((r) => r.type === post.userReaction)
 
   return (
-    <article className="py-4">
+    <article className="py-4 relative">
+      {/* Countdown Badge for Timed Posts */}
+      {countdown && post.expiry !== 'permanent' && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="absolute top-2 left-2 z-10 flex items-center gap-1 px-2 py-1 bg-orange-500/90 text-white rounded-full text-xs font-arabic"
+        >
+          <Clock className="h-3 w-3" />
+          <span>{countdown}</span>
+        </motion.div>
+      )}
+      
       {/* Header */}
       <div className="flex items-center gap-3 px-4 mb-3">
         <Avatar className="h-10 w-10">

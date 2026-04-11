@@ -3,6 +3,8 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 
 export type ReactionType = 'like' | 'love' | 'kaffu' | 'abshir' | 'haha' | 'sad'
 
+export type PostExpiry = '24h' | '1week' | '1month' | 'permanent'
+
 export interface Post {
   id: string
   authorId: string
@@ -20,6 +22,37 @@ export interface Post {
   sharesCount: number
   timestamp: Date
   location?: string
+  expiry?: PostExpiry
+  expiresAt?: Date
+}
+
+export interface TrendingHashtag {
+  id: string
+  tag: string
+  tagAr: string
+  zoolsCount: number
+  isHot: boolean
+  city?: string
+}
+
+export interface LocalService {
+  id: string
+  name: string
+  nameAr: string
+  category: 'hospital' | 'pharmacy' | 'market'
+  address: string
+  addressAr: string
+  statusUpdates: ServiceStatus[]
+  isOpen: boolean
+  distance?: string
+}
+
+export interface ServiceStatus {
+  id: string
+  message: string
+  messageAr: string
+  timestamp: Date
+  authorName: string
 }
 
 export interface Comment {
@@ -55,6 +88,15 @@ interface FeedState {
   reels: Post[]
   currentReelIndex: number
   setCurrentReelIndex: (index: number) => void
+  
+  // Trending
+  trends: TrendingHashtag[]
+  setTrends: (trends: TrendingHashtag[]) => void
+  
+  // Local Services
+  services: LocalService[]
+  setServices: (services: LocalService[]) => void
+  addServiceStatus: (serviceId: string, status: ServiceStatus) => void
   
   // Loading states
   isLoading: boolean
@@ -107,6 +149,100 @@ const demoPosts: Post[] = [
     commentsCount: 12,
     sharesCount: 8,
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 8),
+  },
+]
+
+// Demo trending hashtags
+const demoTrends: TrendingHashtag[] = [
+  { id: 't1', tag: 'كورة_الهلال', tagAr: 'كورة_الهلال', zoolsCount: 4523, isHot: true, city: 'الخرطوم' },
+  { id: 't2', tag: 'الكهرباء_رجعت', tagAr: 'الكهرباء_رجعت', zoolsCount: 3891, isHot: true, city: 'بورتسودان' },
+  { id: 't3', tag: 'سعر_الدولار', tagAr: 'سعر_الدولار', zoolsCount: 2456, isHot: false },
+  { id: 't4', tag: 'مطر_الخرطوم', tagAr: 'مطر_الخرطوم', zoolsCount: 1892, isHot: true, city: 'الخرطوم' },
+  { id: 't5', tag: 'زواج_السنة', tagAr: 'زواج_السنة', zoolsCount: 1567, isHot: false, city: 'كسلا' },
+  { id: 't6', tag: 'صباح_الخير_يا_بلد', tagAr: 'صباح_الخير_يا_بلد', zoolsCount: 1234, isHot: false },
+  { id: 't7', tag: 'المريخ_الليلة', tagAr: 'المريخ_الليلة', zoolsCount: 987, isHot: true, city: 'الخرطوم' },
+  { id: 't8', tag: 'جبنة_الصباح', tagAr: 'جبنة_الصباح', zoolsCount: 756, isHot: false },
+]
+
+// Demo local services
+const demoServices: LocalService[] = [
+  {
+    id: 's1',
+    name: 'Soba Teaching Hospital',
+    nameAr: 'مستشفى سوبا التعليمي',
+    category: 'hospital',
+    address: 'Soba, Khartoum',
+    addressAr: 'سوبا، الخرطوم',
+    isOpen: true,
+    distance: '2.3 كم',
+    statusUpdates: [
+      { id: 'st1', message: 'Emergency open 24/7', messageAr: 'الطوارئ مفتوحة ٢٤ ساعة', timestamp: new Date(), authorName: 'أحمد' },
+    ],
+  },
+  {
+    id: 's2',
+    name: 'Al-Noor Pharmacy',
+    nameAr: 'صيدلية النور المناوبة',
+    category: 'pharmacy',
+    address: 'Bahri, Khartoum',
+    addressAr: 'بحري، الخرطوم',
+    isOpen: true,
+    distance: '1.1 كم',
+    statusUpdates: [
+      { id: 'st2', message: 'All medicines available', messageAr: 'كل الأدوية متوفرة', timestamp: new Date(), authorName: 'محمد' },
+      { id: 'st3', message: 'Crowded now', messageAr: 'الصيدلية مزدحمة حالياً', timestamp: new Date(Date.now() - 1000 * 60 * 30), authorName: 'سارة' },
+    ],
+  },
+  {
+    id: 's3',
+    name: 'Souq Al-Arabi',
+    nameAr: 'سوق العربي',
+    category: 'market',
+    address: 'Central Khartoum',
+    addressAr: 'وسط الخرطوم',
+    isOpen: true,
+    distance: '3.5 كم',
+    statusUpdates: [
+      { id: 'st4', message: 'Bread available now', messageAr: 'خبز متوفر الآن', timestamp: new Date(), authorName: 'خالد' },
+      { id: 'st5', message: 'Good prices today', messageAr: 'أسعار ممتازة اليوم', timestamp: new Date(Date.now() - 1000 * 60 * 45), authorName: 'فاطمة' },
+    ],
+  },
+  {
+    id: 's4',
+    name: 'Royal Care Hospital',
+    nameAr: 'مستشفى رويال كير',
+    category: 'hospital',
+    address: 'Riyadh, Khartoum',
+    addressAr: 'الرياض، الخرطوم',
+    isOpen: true,
+    distance: '4.2 كم',
+    statusUpdates: [],
+  },
+  {
+    id: 's5',
+    name: 'Al-Shifa Pharmacy',
+    nameAr: 'صيدلية الشفاء المناوبة',
+    category: 'pharmacy',
+    address: 'Omdurman',
+    addressAr: 'أم درمان',
+    isOpen: false,
+    distance: '5.8 كم',
+    statusUpdates: [
+      { id: 'st6', message: 'Opens at 8 AM', messageAr: 'تفتح الساعة ٨ صباحاً', timestamp: new Date(), authorName: 'عمر' },
+    ],
+  },
+  {
+    id: 's6',
+    name: 'Souq Omdurman',
+    nameAr: 'سوق أم درمان',
+    category: 'market',
+    address: 'Central Omdurman',
+    addressAr: 'وسط أم درمان',
+    isOpen: true,
+    distance: '6.1 كم',
+    statusUpdates: [
+      { id: 'st7', message: 'Fresh vegetables arrived', messageAr: 'خضار طازة وصلت', timestamp: new Date(), authorName: 'أمينة' },
+    ],
   },
 ]
 
@@ -205,6 +341,22 @@ export const useFeedStore = create<FeedState>()(
       reels: demoReels,
       currentReelIndex: 0,
       setCurrentReelIndex: (currentReelIndex) => set({ currentReelIndex }),
+      
+      // Trending
+      trends: demoTrends,
+      setTrends: (trends) => set({ trends }),
+      
+      // Local Services
+      services: demoServices,
+      setServices: (services) => set({ services }),
+      addServiceStatus: (serviceId, status) =>
+        set((state) => ({
+          services: state.services.map(service =>
+            service.id === serviceId
+              ? { ...service, statusUpdates: [status, ...service.statusUpdates] }
+              : service
+          ),
+        })),
       
       isLoading: false,
       setLoading: (isLoading) => set({ isLoading }),
