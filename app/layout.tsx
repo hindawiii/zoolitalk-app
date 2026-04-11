@@ -1,10 +1,17 @@
 import type { Metadata, Viewport } from 'next'
-import { Cairo, Inter, Geist_Mono } from 'next/font/google'
+import { Tajawal, Cairo, Inter, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/providers/theme-provider'
 import { LanguageProvider } from '@/components/providers/language-provider'
 import { GiftOverlay } from '@/components/gift-overlay'
 import './globals.css'
+
+const tajawal = Tajawal({
+  subsets: ['arabic', 'latin'],
+  weight: ['200', '300', '400', '500', '700', '800', '900'],
+  variable: '--font-tajawal',
+  display: 'swap',
+})
 
 const cairo = Cairo({
   subsets: ['arabic', 'latin'],
@@ -59,7 +66,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
-      <body className={`${cairo.variable} ${inter.variable} ${geistMono.variable} font-sans antialiased`}>
+      <body className={`${tajawal.variable} ${cairo.variable} ${inter.variable} ${geistMono.variable} font-sans antialiased`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

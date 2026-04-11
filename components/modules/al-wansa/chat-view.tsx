@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { motion, AnimatePresence, PanInfo } from 'framer-motion'
+import { motion, AnimatePresence, PanInfo, useAnimation } from 'framer-motion'
 import {
   ArrowLeft,
   ArrowRight,
@@ -20,6 +20,18 @@ import {
   Copy,
   Check,
   CheckCheck,
+  MapPin,
+  Camera,
+  Languages,
+  Gamepad2,
+  Archive,
+  BellOff,
+  Bell,
+  Pin,
+  PinOff,
+  Clock,
+  Pause,
+  Play,
 } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -31,26 +43,64 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from '@/components/ui/dropdown-menu'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { useChatStore, type Message } from '@/lib/stores/chat-store'
 import { useUserStore } from '@/lib/stores/user-store'
 import { useLanguage } from '@/components/providers/language-provider'
+import { ChatBackgroundPattern, useChatTheme } from './chat-theme-provider'
+import { EmojiPicker, AnimatedEmoji, FlyingEmoji } from './animated-emoji'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 import { ar, enUS } from 'date-fns/locale'
 
 interface ChatViewProps {
   onBack: () => void
+  onOpenGames?: () => void
 }
 
-export function ChatView({ onBack }: ChatViewProps) {
-  const { activeChatId, chats, messages, addMessage, isRecording, setRecording, recordingDuration, setRecordingDuration } = useChatStore()
+export function ChatView({ onBack, onOpenGames }: ChatViewProps) {
+  const { 
+    activeChatId, 
+    chats, 
+    messages, 
+    addMessage, 
+    isRecording, 
+    setRecording, 
+    recordingDuration, 
+    setRecordingDuration,
+    archiveChat,
+    muteChat,
+    unmuteChat,
+    pinChat,
+    unpinChat,
+    shareLocation,
+  } = useChatStore()
   const { currentUser } = useUserStore()
   const { t, language, isRTL } = useLanguage()
   
   const [inputValue, setInputValue] = React.useState('')
   const [selectedMessage, setSelectedMessage] = React.useState<Message | null>(null)
   const [replyingTo, setReplyingTo] = React.useState<Message | null>(null)
+  const [showEmojiPicker, setShowEmojiPicker] = React.useState(false)
+  const [flyingEmoji, setFlyingEmoji] = React.useState<string | null>(null)
+  const [showLocationSheet, setShowLocationSheet] = React.useState(false)
+  const [isListening, setIsListening] = React.useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = React.useState(false)
+  const [deleteTarget, setDeleteTarget] = React.useState<{ message: Message; type: 'me' | 'everyone' } | null>(null)
+  
   const scrollRef = React.useRef<HTMLDivElement>(null)
   const inputRef = React.useRef<HTMLInputElement>(null)
   const recordingTimerRef = React.useRef<number | null>(null)
@@ -156,12 +206,75 @@ export function ChatView({ onBack }: ChatViewProps) {
     }
   }
 
+  // Speech-to-text handler
+  const startSpeechToText = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert(isRTL ? 'المتصفح لا يدعم التعرف على الصوت' : 'Speech recognition not supported')
+      return
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    const recognition = new SpeechRecognition()
+    
+    recognition.lang = language === 'ar' ? 'ar-SD' : 'en-US'
+    recognition.interimResults = true
+    recognition.continuous = false
+
+    recognition.onstart = () => setIsListening(true)
+    recognition.onend = () => setIsListening(false)
+    recognition.onerror = () => setIsListening(false)
+    
+    recognition.onresult = (event: any) => {
+      const transcript = Array.from(event.results)
+        .map((result: any) => result[0].transcript)
+        .join('')
+      setInputValue(transcript)
+    }
+
+    recognition.start()
+  }
+
+  // Share location
+  const handleShareLocation = (isLive: boolean, duration?: number) => {
+    if (!currentUser || !activeChatId) return
+    
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          shareLocation(
+            activeChatId,
+            currentUser.id,
+            currentUser.name,
+            currentUser.avatar,
+            position.coords.latitude,
+            position.coords.longitude,
+            isLive,
+            duration
+          )
+          setShowLocationSheet(false)
+        },
+        () => {
+          alert(isRTL ? 'لا يمكن الوصول للموقع' : 'Cannot access location')
+        }
+      )
+    }
+  }
+
+  // Emoji handler
+  const handleEmojiSelect = (emoji: string) => {
+    setInputValue((prev) => prev + emoji)
+    setFlyingEmoji(emoji)
+  }
+
   if (!chat) return null
 
   return (
-    <div className="flex flex-col h-full bg-background w-full max-w-full overflow-x-hidden">
+    <div className="flex flex-col h-full bg-background w-full max-w-full overflow-hidden relative">
+      {/* Background Pattern */}
+      <ChatBackgroundPattern />
+      
       {/* Header */}
-      <header className="flex items-center gap-3 px-2 py-2 bg-card border-b">
+      <header className="flex items-center gap-3 px-2 py-2 bg-card/95 backdrop-blur-sm border-b relative z-10">
         <Button variant="ghost" size="icon" onClick={onBack}>
           <BackIcon className="h-5 w-5" />
         </Button>
@@ -198,16 +311,59 @@ export function ChatView({ onBack }: ChatViewProps) {
                 <MoreVertical className="h-5 w-5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align={isRTL ? 'start' : 'end'}>
+            <DropdownMenuContent align={isRTL ? 'start' : 'end'} className="w-52" dir={isRTL ? 'rtl' : 'ltr'}>
+              {/* Pin/Unpin */}
+              <DropdownMenuItem 
+                onClick={() => chat.isPinned ? unpinChat(chat.id) : pinChat(chat.id)}
+                className={cn('gap-3', isRTL && 'flex-row-reverse')}
+              >
+                {chat.isPinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
+                <span className={cn(isRTL && 'font-arabic')}>
+                  {chat.isPinned ? (isRTL ? 'إلغاء التثبيت' : 'Unpin') : (isRTL ? 'تثبيت' : 'Pin')}
+                </span>
+              </DropdownMenuItem>
+              
+              {/* Mute/Unmute */}
+              <DropdownMenuItem 
+                onClick={() => chat.isMuted ? unmuteChat(chat.id) : muteChat(chat.id)}
+                className={cn('gap-3', isRTL && 'flex-row-reverse')}
+              >
+                {chat.isMuted ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+                <span className={cn(isRTL && 'font-arabic')}>
+                  {chat.isMuted ? (isRTL ? 'إلغاء الكتم' : 'Unmute') : t('chat.mute')}
+                </span>
+              </DropdownMenuItem>
+              
+              {/* Archive */}
+              <DropdownMenuItem 
+                onClick={() => archiveChat(chat.id)}
+                className={cn('gap-3', isRTL && 'flex-row-reverse')}
+              >
+                <Archive className="h-4 w-4" />
+                <span className={cn(isRTL && 'font-arabic')}>{isRTL ? 'أرشفة' : 'Archive'}</span>
+              </DropdownMenuItem>
+              
+              <DropdownMenuSeparator />
+              
+              {/* Games */}
+              <DropdownMenuItem 
+                onClick={onOpenGames}
+                className={cn('gap-3', isRTL && 'flex-row-reverse')}
+              >
+                <Gamepad2 className="h-4 w-4" />
+                <span className={cn(isRTL && 'font-arabic')}>{isRTL ? 'الألعاب' : 'Games'}</span>
+              </DropdownMenuItem>
+              
               {chat.type === 'group' && (
                 <>
-                  <DropdownMenuItem>{t('chat.mute')}</DropdownMenuItem>
-                  <DropdownMenuItem>{t('chat.kick')}</DropdownMenuItem>
-                  <DropdownMenuItem>{t('chat.promote')}</DropdownMenuItem>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem className={cn(isRTL && 'font-arabic')}>{t('chat.kick')}</DropdownMenuItem>
+                  <DropdownMenuItem className={cn(isRTL && 'font-arabic')}>{t('chat.promote')}</DropdownMenuItem>
                 </>
               )}
-              <DropdownMenuItem className="text-destructive">
+              
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className={cn('text-destructive gap-3', isRTL && 'flex-row-reverse font-arabic')}>
                 {t('chat.delete')}
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -216,13 +372,29 @@ export function ChatView({ onBack }: ChatViewProps) {
       </header>
 
       {/* Messages */}
-      <ScrollArea ref={scrollRef} className="flex-1 p-4">
+      <ScrollArea ref={scrollRef} className="flex-1 p-4 pb-24 relative z-0">
         <div className="space-y-4">
           {chatMessages.map((message, index) => {
             const isSent = message.senderId === currentUser?.id
             const showAvatar = !isSent && (
               index === 0 || chatMessages[index - 1]?.senderId !== message.senderId
             )
+            
+            // Don't show deleted messages
+            if (message.deletedForEveryone) {
+              return (
+                <div key={message.id} className="flex justify-center">
+                  <span className="text-xs text-muted-foreground bg-muted/50 px-3 py-1 rounded-full">
+                    {isRTL ? 'تم حذف هذه الرسالة' : 'This message was deleted'}
+                  </span>
+                </div>
+              )
+            }
+            
+            // Don't show if deleted for current user
+            if (message.deletedFor?.includes(currentUser?.id || '')) {
+              return null
+            }
 
             return (
               <MessageBubble
@@ -232,6 +404,8 @@ export function ChatView({ onBack }: ChatViewProps) {
                 showAvatar={showAvatar}
                 onLongPress={() => setSelectedMessage(message)}
                 onReply={() => setReplyingTo(message)}
+                onSwipeReply={() => setReplyingTo(message)}
+                chatMessages={chatMessages}
               />
             )
           })}
@@ -245,7 +419,7 @@ export function ChatView({ onBack }: ChatViewProps) {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden border-t bg-secondary/30"
+            className="overflow-hidden border-t bg-secondary/30 relative z-10"
           >
             <div className="flex items-center gap-2 px-4 py-2">
               <Reply className="h-4 w-4 text-primary" />
@@ -261,8 +435,11 @@ export function ChatView({ onBack }: ChatViewProps) {
         )}
       </AnimatePresence>
 
-      {/* Input Area */}
-      <div className="p-3 border-t bg-card">
+      {/* Sticky Input Area */}
+      <div 
+        className="sticky bottom-0 left-0 right-0 p-3 border-t bg-card/95 backdrop-blur-sm z-20"
+        dir={isRTL ? 'rtl' : 'ltr'}
+      >
         {isRecording ? (
           <motion.div
             className="flex items-center gap-3"
@@ -286,13 +463,67 @@ export function ChatView({ onBack }: ChatViewProps) {
             </Button>
           </motion.div>
         ) : (
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="flex-shrink-0">
-              <Smile className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="flex-shrink-0">
-              <ImageIcon className="h-5 w-5" />
-            </Button>
+          <div className={cn('flex items-center gap-2', isRTL && 'flex-row-reverse')}>
+            {/* Emoji Picker */}
+            <div className="relative flex-shrink-0">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-10 w-10"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              >
+                <Smile className="h-5 w-5" />
+              </Button>
+              <EmojiPicker
+                isOpen={showEmojiPicker}
+                onSelect={handleEmojiSelect}
+                onClose={() => setShowEmojiPicker(false)}
+              />
+            </div>
+            
+            {/* Attachment Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-10 w-10 flex-shrink-0">
+                  <ImageIcon className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align={isRTL ? 'start' : 'start'} className="min-w-[180px]" dir={isRTL ? 'rtl' : 'ltr'}>
+                <DropdownMenuItem className={cn('gap-2', isRTL && 'flex-row-reverse')}>
+                  <ImageIcon className="h-4 w-4" />
+                  <span className={cn(isRTL && 'font-arabic')}>{isRTL ? 'صورة' : 'Photo'}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className={cn('gap-2', isRTL && 'flex-row-reverse')}>
+                  <Camera className="h-4 w-4" />
+                  <span className={cn(isRTL && 'font-arabic')}>{isRTL ? 'مسح مستند' : 'Scan Document'}</span>
+                </DropdownMenuItem>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className={cn('gap-2', isRTL && 'flex-row-reverse')}>
+                    <MapPin className="h-4 w-4" />
+                    <span className={cn(isRTL && 'font-arabic')}>{isRTL ? 'موقع' : 'Location'}</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent dir={isRTL ? 'rtl' : 'ltr'}>
+                    <DropdownMenuItem onClick={() => handleShareLocation(false)} className={cn('gap-2', isRTL && 'flex-row-reverse')}>
+                      <MapPin className="h-4 w-4" />
+                      <span className={cn(isRTL && 'font-arabic')}>{isRTL ? 'الموقع الحالي' : 'Current Location'}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => handleShareLocation(true, 15)} className={cn('gap-2', isRTL && 'flex-row-reverse')}>
+                      <Clock className="h-4 w-4" />
+                      <span className={cn(isRTL && 'font-arabic')}>{isRTL ? 'مباشر 15 دقيقة' : 'Live 15 min'}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleShareLocation(true, 60)} className={cn('gap-2', isRTL && 'flex-row-reverse')}>
+                      <Clock className="h-4 w-4" />
+                      <span className={cn(isRTL && 'font-arabic')}>{isRTL ? 'مباشر 1 ساعة' : 'Live 1 hour'}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleShareLocation(true, 480)} className={cn('gap-2', isRTL && 'flex-row-reverse')}>
+                      <Clock className="h-4 w-4" />
+                      <span className={cn(isRTL && 'font-arabic')}>{isRTL ? 'مباشر 8 ساعات' : 'Live 8 hours'}</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              </DropdownMenuContent>
+            </DropdownMenu>
             
             <Input
               ref={inputRef}
@@ -315,18 +546,17 @@ export function ChatView({ onBack }: ChatViewProps) {
                 <Send className={cn('h-5 w-5', isRTL && 'rotate-180')} />
               </Button>
             ) : (
-              <Button
-                size="icon"
-                variant="ghost"
-                className="flex-shrink-0"
-                onMouseDown={startRecording}
-                onMouseUp={sendVoiceNote}
-                onMouseLeave={cancelRecording}
-                onTouchStart={startRecording}
-                onTouchEnd={sendVoiceNote}
-              >
-                <Mic className="h-5 w-5" />
-              </Button>
+              <div className="flex items-center gap-1">
+                {/* Speech-to-Text */}
+                <Button
+                  size="icon"
+                  variant={isListening ? 'default' : 'ghost'}
+                  className={cn('flex-shrink-0 rounded-full', isListening && 'recording-pulse')}
+                  onClick={startSpeechToText}
+                >
+                  <Mic className="h-5 w-5" />
+                </Button>
+              </div>
             )}
           </div>
         )}
@@ -342,25 +572,53 @@ export function ChatView({ onBack }: ChatViewProps) {
               setReplyingTo(selectedMessage)
               setSelectedMessage(null)
             }}
+            onDeleteForMe={(msg) => {
+              setDeleteTarget({ message: msg, type: 'me' })
+              setShowDeleteDialog(true)
+              setSelectedMessage(null)
+            }}
+            onDeleteForEveryone={(msg) => {
+              setDeleteTarget({ message: msg, type: 'everyone' })
+              setShowDeleteDialog(true)
+              setSelectedMessage(null)
+            }}
           />
         )}
       </AnimatePresence>
+
+      {/* Flying Emoji */}
+      <AnimatePresence>
+        {flyingEmoji && (
+          <FlyingEmoji emoji={flyingEmoji} onComplete={() => setFlyingEmoji(null)} />
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteMessageDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        deleteTarget={deleteTarget}
+      />
     </div>
   )
 }
 
-// Message Bubble Component
+// Message Bubble Component with Swipe to Reply
 interface MessageBubbleProps {
   message: Message
   isSent: boolean
   showAvatar: boolean
   onLongPress: () => void
   onReply: () => void
+  onSwipeReply: () => void
+  chatMessages: Message[]
 }
 
-function MessageBubble({ message, isSent, showAvatar, onLongPress }: MessageBubbleProps) {
+function MessageBubble({ message, isSent, showAvatar, onLongPress, onSwipeReply, chatMessages }: MessageBubbleProps) {
   const { language, isRTL } = useLanguage()
   const longPressTimer = React.useRef<number | null>(null)
+  const controls = useAnimation()
+  const [showReplyIcon, setShowReplyIcon] = React.useState(false)
 
   const handleTouchStart = () => {
     longPressTimer.current = window.setTimeout(onLongPress, 500)
@@ -372,6 +630,23 @@ function MessageBubble({ message, isSent, showAvatar, onLongPress }: MessageBubb
     }
   }
 
+  const handleDragEnd = async (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    const threshold = 80
+    const swipeDirection = isRTL ? -info.offset.x : info.offset.x
+    
+    if (swipeDirection > threshold) {
+      onSwipeReply()
+    }
+    
+    await controls.start({ x: 0 })
+    setShowReplyIcon(false)
+  }
+
+  const handleDrag = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    const swipeDirection = isRTL ? -info.offset.x : info.offset.x
+    setShowReplyIcon(swipeDirection > 30)
+  }
+
   const formatMessageTime = (date: Date) => {
     return format(date, 'p', { locale: language === 'ar' ? ar : enUS })
   }
@@ -379,75 +654,189 @@ function MessageBubble({ message, isSent, showAvatar, onLongPress }: MessageBubb
   const StatusIcon = message.status === 'read' ? CheckCheck : 
                      message.status === 'delivered' ? CheckCheck : Check
 
-  return (
-    <div
-      className={cn(
-        'flex gap-2',
-        isSent ? (isRTL ? 'flex-row' : 'flex-row-reverse') : (isRTL ? 'flex-row-reverse' : 'flex-row')
-      )}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onContextMenu={(e) => {
-        e.preventDefault()
-        onLongPress()
-      }}
-    >
-      {/* Avatar (for received messages) */}
-      {!isSent && (
-        <div className="w-8 flex-shrink-0">
-          {showAvatar && (
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={message.senderAvatar} alt={message.senderName} />
-              <AvatarFallback>{message.senderName[0]}</AvatarFallback>
-            </Avatar>
-          )}
-        </div>
-      )}
+  // Find reply message
+  const replyMessage = message.replyTo 
+    ? chatMessages.find(m => m.id === message.replyTo) 
+    : null
 
-      {/* Bubble */}
-      <div
+  return (
+    <div className="relative">
+      {/* Reply Icon */}
+      <AnimatePresence>
+        {showReplyIcon && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.5 }}
+            className={cn(
+              'absolute top-1/2 -translate-y-1/2 z-10',
+              isSent ? (isRTL ? 'right-full mr-2' : 'left-full ml-2') : (isRTL ? 'left-full ml-2' : 'right-full mr-2')
+            )}
+          >
+            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+              <Reply className="h-4 w-4 text-primary" />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      <motion.div
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.2}
+        onDrag={handleDrag}
+        onDragEnd={handleDragEnd}
+        animate={controls}
         className={cn(
-          'chat-bubble',
-          isSent ? 'chat-bubble-sent' : 'chat-bubble-received'
+          'flex gap-2',
+          // In RTL: sent messages should justify-end (right), received justify-start (left)
+          // In LTR: sent messages should justify-end (right), received justify-start (left)
+          isSent ? 'justify-end' : 'justify-start',
+          // Flex direction for avatar positioning
+          isSent ? 'flex-row-reverse' : 'flex-row'
         )}
+        dir={isRTL ? 'rtl' : 'ltr'}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onContextMenu={(e) => {
+          e.preventDefault()
+          onLongPress()
+        }}
       >
-        {message.type === 'voice' ? (
-          <div className="flex items-center gap-2 min-w-[150px]">
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-              <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </Button>
-            <div className="flex-1 h-1 bg-current/30 rounded-full" />
-            <span className="text-xs opacity-70">
-              {Math.floor((message.voiceDuration || 0) / 60)}:
-              {((message.voiceDuration || 0) % 60).toString().padStart(2, '0')}
-            </span>
+        {/* Avatar (for received messages) */}
+        {!isSent && (
+          <div className="w-8 flex-shrink-0">
+            {showAvatar && (
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={message.senderAvatar} alt={message.senderName} />
+                <AvatarFallback>{message.senderName[0]}</AvatarFallback>
+              </Avatar>
+            )}
           </div>
-        ) : (
-          <p className={cn(isRTL && 'font-arabic')}>{message.content}</p>
         )}
-        
-        {/* Time and status */}
-        <div className={cn(
-          'flex items-center gap-1 mt-1',
-          isSent ? 'justify-end' : 'justify-start'
-        )}>
-          <span className="text-[10px] opacity-70">
-            {formatMessageTime(message.timestamp)}
-          </span>
-          {isSent && (
-            <StatusIcon className={cn(
-              'h-3 w-3',
-              message.status === 'read' ? 'text-blue-400' : 'opacity-70'
-            )} />
+
+        {/* Bubble */}
+        <div
+          className={cn(
+            'chat-bubble',
+            isSent ? 'chat-bubble-sent' : 'chat-bubble-received',
+            isRTL && 'text-right'
           )}
-          {message.isEdited && (
-            <span className="text-[10px] opacity-50">
-              {isRTL ? 'معدل' : 'edited'}
+          dir={isRTL ? 'rtl' : 'ltr'}
+        >
+          {/* Reply Preview */}
+          {replyMessage && (
+            <div className={cn(
+              'mb-2 pb-2 border-b text-sm opacity-80',
+              isSent ? 'border-primary-foreground/20' : 'border-secondary-foreground/20'
+            )}>
+              <p className="font-medium text-xs">{replyMessage.senderName}</p>
+              <p className="truncate">{replyMessage.content}</p>
+            </div>
+          )}
+          
+          {message.type === 'voice' ? (
+            <VoiceMessagePlayer message={message} isSent={isSent} />
+          ) : message.type === 'location' ? (
+            <LocationMessage message={message} isSent={isSent} />
+          ) : (
+            <>
+              <p className={cn(isRTL && 'font-arabic')}>{message.content}</p>
+              {message.translatedContent && (
+                <p className={cn('mt-2 pt-2 border-t text-sm opacity-80', isRTL && 'font-arabic')}>
+                  {message.translatedContent}
+                </p>
+              )}
+            </>
+          )}
+          
+          {/* Time and status */}
+          <div className={cn(
+            'flex items-center gap-1 mt-1',
+            isSent ? 'justify-end' : 'justify-start'
+          )}>
+            <span className="text-[10px] opacity-70">
+              {formatMessageTime(message.timestamp)}
             </span>
-          )}
+            {isSent && (
+              <StatusIcon className={cn(
+                'h-3 w-3',
+                message.status === 'read' ? 'text-blue-400' : 'opacity-70'
+              )} />
+            )}
+            {message.isEdited && (
+              <span className="text-[10px] opacity-50">
+                {isRTL ? 'معدل' : 'edited'}
+              </span>
+            )}
+          </div>
         </div>
+      </motion.div>
+    </div>
+  )
+}
+
+// Voice Message Player
+function VoiceMessagePlayer({ message, isSent }: { message: Message; isSent: boolean }) {
+  const [isPlaying, setIsPlaying] = React.useState(false)
+  const [progress, setProgress] = React.useState(0)
+
+  return (
+    <div className="flex items-center gap-2 min-w-[150px]">
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        className="h-8 w-8 rounded-full"
+        onClick={() => setIsPlaying(!isPlaying)}
+      >
+        {isPlaying ? (
+          <Pause className="h-4 w-4" />
+        ) : (
+          <Play className="h-4 w-4" />
+        )}
+      </Button>
+      <div className="flex-1 h-1 bg-current/30 rounded-full overflow-hidden">
+        <motion.div 
+          className="h-full bg-current/70"
+          initial={{ width: '0%' }}
+          animate={{ width: isPlaying ? '100%' : `${progress}%` }}
+          transition={{ duration: message.voiceDuration || 5 }}
+        />
+      </div>
+      <span className="text-xs opacity-70">
+        {Math.floor((message.voiceDuration || 0) / 60)}:
+        {((message.voiceDuration || 0) % 60).toString().padStart(2, '0')}
+      </span>
+    </div>
+  )
+}
+
+// Location Message
+function LocationMessage({ message, isSent }: { message: Message; isSent: boolean }) {
+  const { isRTL } = useLanguage()
+  
+  if (!message.location) return null
+  
+  return (
+    <div className="min-w-[180px]">
+      <div className="w-full h-24 bg-muted/50 rounded-lg flex items-center justify-center mb-2">
+        <MapPin className="h-8 w-8 text-primary" />
+      </div>
+      <div className="flex items-center gap-2">
+        {message.location.isLive && (
+          <span className="recording-pulse w-2 h-2 bg-green-500 rounded-full" />
+        )}
+        <span className="text-sm">
+          {message.location.isLive 
+            ? (isRTL ? 'موقع مباشر' : 'Live Location')
+            : (isRTL ? 'الموقع' : 'Location')
+          }
+        </span>
+        {message.location.duration && (
+          <span className="text-xs opacity-70">
+            ({message.location.duration} {isRTL ? 'دقيقة' : 'min'})
+          </span>
+        )}
       </div>
     </div>
   )
@@ -458,22 +847,33 @@ interface MessageContextMenuProps {
   message: Message
   onClose: () => void
   onReply: () => void
+  onDeleteForMe: (message: Message) => void
+  onDeleteForEveryone: (message: Message) => void
 }
 
-function MessageContextMenu({ message, onClose, onReply }: MessageContextMenuProps) {
+function MessageContextMenu({ message, onClose, onReply, onDeleteForMe, onDeleteForEveryone }: MessageContextMenuProps) {
   const { t, isRTL } = useLanguage()
-  const { deleteMessage } = useChatStore()
+  const { translateMessage } = useChatStore()
   const { currentUser } = useUserStore()
 
   const isSent = message.senderId === currentUser?.id
+
+  const handleTranslate = async () => {
+    // Mock translation - in production, use a translation API
+    const translatedContent = isRTL 
+      ? 'Translated to English...' 
+      : 'تمت الترجمة للعربية...'
+    translateMessage(message.chatId, message.id, translatedContent, isRTL ? 'ar' : 'en')
+    onClose()
+  }
 
   const actions = [
     { icon: Reply, label: t('chat.reply'), onClick: onReply },
     { icon: Forward, label: t('chat.forward'), onClick: () => {} },
     { icon: Copy, label: t('chat.copy'), onClick: () => navigator.clipboard.writeText(message.content) },
+    { icon: Languages, label: isRTL ? 'ترجمة' : 'Translate', onClick: handleTranslate },
     ...(isSent ? [
       { icon: Edit2, label: t('chat.edit'), onClick: () => {} },
-      { icon: Trash2, label: t('chat.delete'), onClick: () => deleteMessage(message.chatId, message.id), danger: true },
     ] : []),
   ]
 
@@ -502,7 +902,6 @@ function MessageContextMenu({ message, onClose, onReply }: MessageContextMenuPro
             className={cn(
               'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
               'hover:bg-secondary',
-              action.danger && 'text-destructive hover:bg-destructive/10',
               isRTL && 'flex-row-reverse'
             )}
           >
@@ -510,7 +909,93 @@ function MessageContextMenu({ message, onClose, onReply }: MessageContextMenuPro
             <span className={cn(isRTL && 'font-arabic')}>{action.label}</span>
           </button>
         ))}
+        
+        {/* Delete options */}
+        <div className="border-t mt-1 pt-1">
+          <button
+            onClick={() => onDeleteForMe(message)}
+            className={cn(
+              'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
+              'hover:bg-secondary text-muted-foreground',
+              isRTL && 'flex-row-reverse'
+            )}
+          >
+            <Trash2 className="h-5 w-5" />
+            <span className={cn(isRTL && 'font-arabic')}>
+              {isRTL ? 'حذف لي' : 'Delete for me'}
+            </span>
+          </button>
+          
+          {isSent && (
+            <button
+              onClick={() => onDeleteForEveryone(message)}
+              className={cn(
+                'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
+                'hover:bg-destructive/10 text-destructive',
+                isRTL && 'flex-row-reverse'
+              )}
+            >
+              <Trash2 className="h-5 w-5" />
+              <span className={cn(isRTL && 'font-arabic')}>
+                {isRTL ? 'حذف للجميع' : 'Delete for everyone'}
+              </span>
+            </button>
+          )}
+        </div>
       </motion.div>
     </motion.div>
+  )
+}
+
+// Delete Message Dialog
+function DeleteMessageDialog({ 
+  open, 
+  onOpenChange, 
+  deleteTarget 
+}: { 
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  deleteTarget: { message: Message; type: 'me' | 'everyone' } | null
+}) {
+  const { deleteMessageForMe, deleteMessageForEveryone } = useChatStore()
+  const { currentUser } = useUserStore()
+  const { isRTL } = useLanguage()
+
+  const handleDelete = () => {
+    if (!deleteTarget || !currentUser) return
+
+    if (deleteTarget.type === 'me') {
+      deleteMessageForMe(deleteTarget.message.chatId, deleteTarget.message.id, currentUser.id)
+    } else {
+      deleteMessageForEveryone(deleteTarget.message.chatId, deleteTarget.message.id)
+    }
+    
+    onOpenChange(false)
+  }
+
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className={cn(isRTL && 'font-arabic text-right')}>
+            {isRTL ? 'حذف الرسالة' : 'Delete Message'}
+          </AlertDialogTitle>
+          <AlertDialogDescription className={cn(isRTL && 'font-arabic text-right')}>
+            {deleteTarget?.type === 'everyone'
+              ? (isRTL ? 'سيتم حذف هذه الرسالة للجميع' : 'This message will be deleted for everyone')
+              : (isRTL ? 'سيتم حذف هذه الرسالة لك فقط' : 'This message will only be deleted for you')
+            }
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter className={cn(isRTL && 'flex-row-reverse')}>
+          <AlertDialogCancel className={cn(isRTL && 'font-arabic')}>
+            {isRTL ? 'إلغاء' : 'Cancel'}
+          </AlertDialogCancel>
+          <AlertDialogAction onClick={handleDelete} className={cn('bg-destructive hover:bg-destructive/90', isRTL && 'font-arabic')}>
+            {isRTL ? 'حذف' : 'Delete'}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }
