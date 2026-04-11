@@ -240,6 +240,45 @@
     animation: pulse-record 1s ease-in-out infinite;
   }
   
+  /* Speech-to-text listening animation */
+  @keyframes speech-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(var(--primary), 0.4); }
+    50% { box-shadow: 0 0 0 10px rgba(var(--primary), 0); }
+  }
+  
+  .speech-listening {
+    animation: speech-pulse 1.5s ease-in-out infinite;
+  }
+  
+  /* Dhikr counter tap animation */
+  @keyframes dhikr-tap {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.95); }
+    100% { transform: scale(1); }
+  }
+  
+  .dhikr-tap {
+    animation: dhikr-tap 0.2s ease-out;
+  }
+  
+  /* Ludo dice roll animation */
+  @keyframes dice-roll {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(90deg); }
+    50% { transform: rotate(180deg); }
+    75% { transform: rotate(270deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  .dice-rolling {
+    animation: dice-roll 0.1s linear infinite;
+  }
+  
+  /* Sudanese pattern backgrounds */
+  .rakoba-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%232D5A27' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+  
   /* Gift overlay */
   .gift-overlay {
     @apply fixed inset-0 z-[100] pointer-events-none flex items-center justify-center;

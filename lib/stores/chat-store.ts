@@ -8,14 +8,28 @@ export interface Message {
   senderName: string
   senderAvatar: string
   content: string
-  type: 'text' | 'voice' | 'image' | 'sticker'
+  type: 'text' | 'voice' | 'image' | 'sticker' | 'location'
   voiceDuration?: number
   imageUrl?: string
   stickerUrl?: string
+  // Location sharing
+  location?: {
+    lat: number
+    lng: number
+    isLive: boolean
+    expiresAt?: Date
+    duration?: number // in minutes: 15, 60, or 480
+  }
   timestamp: Date
   status: 'sending' | 'sent' | 'delivered' | 'read'
   replyTo?: string
   isEdited?: boolean
+  // Delete tracking
+  deletedForEveryone?: boolean
+  deletedFor?: string[] // User IDs who deleted this message for themselves
+  // Translation
+  translatedContent?: string
+  originalLanguage?: string
 }
 
 export interface Chat {
@@ -32,6 +46,12 @@ export interface Chat {
   // For groups (Janba)
   admins?: string[]
   mutedUsers?: string[]
+  // Archive and Mute
+  isArchived?: boolean
+  isMuted?: boolean
+  mutedUntil?: Date
+  // Pinned
+  isPinned?: boolean
 }
 
 export interface ChatParticipant {
@@ -56,10 +76,20 @@ interface ChatState {
   addMessage: (chatId: string, message: Message) => void
   editMessage: (chatId: string, messageId: string, newContent: string) => void
   deleteMessage: (chatId: string, messageId: string) => void
+  deleteMessageForEveryone: (chatId: string, messageId: string) => void
+  deleteMessageForMe: (chatId: string, messageId: string, userId: string) => void
   
   // Typing indicators
   typingUsers: Record<string, string[]>
   setTyping: (chatId: string, userId: string, isTyping: boolean) => void
+  
+  // Archive and Mute
+  archiveChat: (chatId: string) => void
+  unarchiveChat: (chatId: string) => void
+  muteChat: (chatId: string, until?: Date) => void
+  unmuteChat: (chatId: string) => void
+  pinChat: (chatId: string) => void
+  unpinChat: (chatId: string) => void
   
   // Admin actions (for Janba/groups)
   muteUser: (chatId: string, userId: string) => void
@@ -72,6 +102,17 @@ interface ChatState {
   recordingDuration: number
   setRecording: (isRecording: boolean) => void
   setRecordingDuration: (duration: number) => void
+  
+  // Location sharing
+  shareLocation: (chatId: string, userId: string, userName: string, userAvatar: string, lat: number, lng: number, isLive: boolean, duration?: number) => void
+  stopLiveLocation: (chatId: string, messageId: string) => void
+  
+  // Translation
+  translateMessage: (chatId: string, messageId: string, translatedContent: string, originalLanguage: string) => void
+  
+  // Games
+  activeGame: string | null
+  setActiveGame: (game: string | null) => void
 }
 
 // Demo chats data
@@ -360,7 +401,7 @@ export const useChatStore = create<ChatState>()(
           },
           chats: state.chats.map(chat =>
             chat.id === chatId
-              ? { ...chat, lastMessage: message.content, lastMessageTime: message.timestamp, unreadCount: 0 }
+              ? { ...chat, lastMessage: message.content || (message.type === 'location' ? '📍 Location' : '🎤 Voice'), lastMessageTime: message.timestamp, unreadCount: 0 }
               : chat
           ),
         })),
@@ -380,6 +421,26 @@ export const useChatStore = create<ChatState>()(
             [chatId]: (state.messages[chatId] || []).filter(msg => msg.id !== messageId),
           },
         })),
+      deleteMessageForEveryone: (chatId, messageId) =>
+        set((state) => ({
+          messages: {
+            ...state.messages,
+            [chatId]: (state.messages[chatId] || []).map(msg =>
+              msg.id === messageId ? { ...msg, deletedForEveryone: true, content: '' } : msg
+            ),
+          },
+        })),
+      deleteMessageForMe: (chatId, messageId, userId) =>
+        set((state) => ({
+          messages: {
+            ...state.messages,
+            [chatId]: (state.messages[chatId] || []).map(msg =>
+              msg.id === messageId 
+                ? { ...msg, deletedFor: [...(msg.deletedFor || []), userId] } 
+                : msg
+            ),
+          },
+        })),
       
       typingUsers: {},
       setTyping: (chatId, userId, isTyping) =>
@@ -392,6 +453,44 @@ export const useChatStore = create<ChatState>()(
             typingUsers: { ...state.typingUsers, [chatId]: updated },
           }
         }),
+      
+      // Archive and Mute
+      archiveChat: (chatId) =>
+        set((state) => ({
+          chats: state.chats.map(chat =>
+            chat.id === chatId ? { ...chat, isArchived: true } : chat
+          ),
+        })),
+      unarchiveChat: (chatId) =>
+        set((state) => ({
+          chats: state.chats.map(chat =>
+            chat.id === chatId ? { ...chat, isArchived: false } : chat
+          ),
+        })),
+      muteChat: (chatId, until) =>
+        set((state) => ({
+          chats: state.chats.map(chat =>
+            chat.id === chatId ? { ...chat, isMuted: true, mutedUntil: until } : chat
+          ),
+        })),
+      unmuteChat: (chatId) =>
+        set((state) => ({
+          chats: state.chats.map(chat =>
+            chat.id === chatId ? { ...chat, isMuted: false, mutedUntil: undefined } : chat
+          ),
+        })),
+      pinChat: (chatId) =>
+        set((state) => ({
+          chats: state.chats.map(chat =>
+            chat.id === chatId ? { ...chat, isPinned: true } : chat
+          ),
+        })),
+      unpinChat: (chatId) =>
+        set((state) => ({
+          chats: state.chats.map(chat =>
+            chat.id === chatId ? { ...chat, isPinned: false } : chat
+          ),
+        })),
       
       muteUser: (chatId, userId) =>
         set((state) => ({
@@ -438,6 +537,62 @@ export const useChatStore = create<ChatState>()(
       recordingDuration: 0,
       setRecording: (isRecording) => set({ isRecording, recordingDuration: 0 }),
       setRecordingDuration: (recordingDuration) => set({ recordingDuration }),
+      
+      // Location sharing
+      shareLocation: (chatId, userId, userName, userAvatar, lat, lng, isLive, duration) => {
+        const expiresAt = isLive && duration 
+          ? new Date(Date.now() + duration * 60 * 1000) 
+          : undefined
+        
+        const message: Message = {
+          id: `msg-loc-${Date.now()}`,
+          chatId,
+          senderId: userId,
+          senderName: userName,
+          senderAvatar: userAvatar,
+          content: isLive ? 'Live location' : 'Location',
+          type: 'location',
+          location: {
+            lat,
+            lng,
+            isLive,
+            expiresAt,
+            duration,
+          },
+          timestamp: new Date(),
+          status: 'sending',
+        }
+        
+        get().addMessage(chatId, message)
+      },
+      stopLiveLocation: (chatId, messageId) =>
+        set((state) => ({
+          messages: {
+            ...state.messages,
+            [chatId]: (state.messages[chatId] || []).map(msg =>
+              msg.id === messageId && msg.location
+                ? { ...msg, location: { ...msg.location, isLive: false } }
+                : msg
+            ),
+          },
+        })),
+      
+      // Translation
+      translateMessage: (chatId, messageId, translatedContent, originalLanguage) =>
+        set((state) => ({
+          messages: {
+            ...state.messages,
+            [chatId]: (state.messages[chatId] || []).map(msg =>
+              msg.id === messageId
+                ? { ...msg, translatedContent, originalLanguage }
+                : msg
+            ),
+          },
+        })),
+      
+      // Games
+      activeGame: null,
+      setActiveGame: (game) => set({ activeGame: game }),
     }),
     {
       name: 'rakobatna-chat-storage',
