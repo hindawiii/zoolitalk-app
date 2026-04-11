@@ -65,7 +65,12 @@ export function AnimatedEmoji({
 }
 
 // Emoji picker with commonly used Sudanese-friendly reactions
-const commonEmojis = ['😊', '❤️', '😂', '👍', '🤲', '☕', '🙏', '💪', '🎉', '👏', '🤝', '✨']
+const commonEmojis = [
+  '😊', '❤️', '😂', '👍',
+  '🤲', '☕', '🙏', '💪',
+  '🎉', '👏', '🤝', '✨',
+  '😍', '🥰', '😢', '🔥',
+]
 
 interface EmojiPickerProps {
   onSelect: (emoji: string) => void
@@ -82,14 +87,15 @@ export function EmojiPicker({ onSelect, onClose, isOpen }: EmojiPickerProps) {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 10, scale: 0.95 }}
           transition={{ duration: 0.15 }}
-          className="absolute bottom-full mb-2 bg-card border border-border rounded-2xl p-3 shadow-lg"
+          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 bg-card border border-border rounded-2xl p-4 shadow-xl min-w-[200px]"
         >
-          <div className="grid grid-cols-6 gap-1">
+          <div className="grid grid-cols-4 gap-3 place-items-center">
             {commonEmojis.map((emoji) => (
               <AnimatedEmoji
                 key={emoji}
                 emoji={emoji}
-                size="md"
+                size="lg"
+                className="w-10 h-10 flex items-center justify-center hover:bg-secondary rounded-lg transition-colors"
                 onClick={() => {
                   onSelect(emoji)
                   onClose()

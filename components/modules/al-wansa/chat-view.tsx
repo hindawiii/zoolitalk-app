@@ -311,43 +311,59 @@ export function ChatView({ onBack, onOpenGames }: ChatViewProps) {
                 <MoreVertical className="h-5 w-5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align={isRTL ? 'start' : 'end'} className="w-48">
+            <DropdownMenuContent align={isRTL ? 'start' : 'end'} className="w-52" dir={isRTL ? 'rtl' : 'ltr'}>
               {/* Pin/Unpin */}
-              <DropdownMenuItem onClick={() => chat.isPinned ? unpinChat(chat.id) : pinChat(chat.id)}>
-                {chat.isPinned ? <PinOff className="h-4 w-4 mr-2" /> : <Pin className="h-4 w-4 mr-2" />}
-                {chat.isPinned ? (isRTL ? 'إلغاء التثبيت' : 'Unpin') : (isRTL ? 'تثبيت' : 'Pin')}
+              <DropdownMenuItem 
+                onClick={() => chat.isPinned ? unpinChat(chat.id) : pinChat(chat.id)}
+                className={cn('gap-3', isRTL && 'flex-row-reverse')}
+              >
+                {chat.isPinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
+                <span className={cn(isRTL && 'font-arabic')}>
+                  {chat.isPinned ? (isRTL ? 'إلغاء التثبيت' : 'Unpin') : (isRTL ? 'تثبيت' : 'Pin')}
+                </span>
               </DropdownMenuItem>
               
               {/* Mute/Unmute */}
-              <DropdownMenuItem onClick={() => chat.isMuted ? unmuteChat(chat.id) : muteChat(chat.id)}>
-                {chat.isMuted ? <Bell className="h-4 w-4 mr-2" /> : <BellOff className="h-4 w-4 mr-2" />}
-                {chat.isMuted ? (isRTL ? 'إلغاء الكتم' : 'Unmute') : t('chat.mute')}
+              <DropdownMenuItem 
+                onClick={() => chat.isMuted ? unmuteChat(chat.id) : muteChat(chat.id)}
+                className={cn('gap-3', isRTL && 'flex-row-reverse')}
+              >
+                {chat.isMuted ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+                <span className={cn(isRTL && 'font-arabic')}>
+                  {chat.isMuted ? (isRTL ? 'إلغاء الكتم' : 'Unmute') : t('chat.mute')}
+                </span>
               </DropdownMenuItem>
               
               {/* Archive */}
-              <DropdownMenuItem onClick={() => archiveChat(chat.id)}>
-                <Archive className="h-4 w-4 mr-2" />
-                {isRTL ? 'أرشفة' : 'Archive'}
+              <DropdownMenuItem 
+                onClick={() => archiveChat(chat.id)}
+                className={cn('gap-3', isRTL && 'flex-row-reverse')}
+              >
+                <Archive className="h-4 w-4" />
+                <span className={cn(isRTL && 'font-arabic')}>{isRTL ? 'أرشفة' : 'Archive'}</span>
               </DropdownMenuItem>
               
               <DropdownMenuSeparator />
               
               {/* Games */}
-              <DropdownMenuItem onClick={onOpenGames}>
-                <Gamepad2 className="h-4 w-4 mr-2" />
-                {isRTL ? 'الألعاب' : 'Games'}
+              <DropdownMenuItem 
+                onClick={onOpenGames}
+                className={cn('gap-3', isRTL && 'flex-row-reverse')}
+              >
+                <Gamepad2 className="h-4 w-4" />
+                <span className={cn(isRTL && 'font-arabic')}>{isRTL ? 'الألعاب' : 'Games'}</span>
               </DropdownMenuItem>
               
               {chat.type === 'group' && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>{t('chat.kick')}</DropdownMenuItem>
-                  <DropdownMenuItem>{t('chat.promote')}</DropdownMenuItem>
+                  <DropdownMenuItem className={cn(isRTL && 'font-arabic')}>{t('chat.kick')}</DropdownMenuItem>
+                  <DropdownMenuItem className={cn(isRTL && 'font-arabic')}>{t('chat.promote')}</DropdownMenuItem>
                 </>
               )}
               
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">
+              <DropdownMenuItem className={cn('text-destructive gap-3', isRTL && 'flex-row-reverse font-arabic')}>
                 {t('chat.delete')}
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -420,7 +436,10 @@ export function ChatView({ onBack, onOpenGames }: ChatViewProps) {
       </AnimatePresence>
 
       {/* Sticky Input Area */}
-      <div className="sticky bottom-0 left-0 right-0 p-3 border-t bg-card/95 backdrop-blur-sm z-20">
+      <div 
+        className="sticky bottom-0 left-0 right-0 p-3 border-t bg-card/95 backdrop-blur-sm z-20"
+        dir={isRTL ? 'rtl' : 'ltr'}
+      >
         {isRecording ? (
           <motion.div
             className="flex items-center gap-3"
@@ -444,13 +463,13 @@ export function ChatView({ onBack, onOpenGames }: ChatViewProps) {
             </Button>
           </motion.div>
         ) : (
-          <div className="flex items-center gap-2">
+          <div className={cn('flex items-center gap-2', isRTL && 'flex-row-reverse')}>
             {/* Emoji Picker */}
-            <div className="relative">
+            <div className="relative flex-shrink-0">
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="flex-shrink-0"
+                className="h-10 w-10"
                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
               >
                 <Smile className="h-5 w-5" />
@@ -465,41 +484,41 @@ export function ChatView({ onBack, onOpenGames }: ChatViewProps) {
             {/* Attachment Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="flex-shrink-0">
+                <Button variant="ghost" size="icon" className="h-10 w-10 flex-shrink-0">
                   <ImageIcon className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align={isRTL ? 'end' : 'start'}>
-                <DropdownMenuItem>
-                  <ImageIcon className="h-4 w-4 mr-2" />
-                  {isRTL ? 'صورة' : 'Photo'}
+              <DropdownMenuContent align={isRTL ? 'start' : 'start'} className="min-w-[180px]" dir={isRTL ? 'rtl' : 'ltr'}>
+                <DropdownMenuItem className={cn('gap-2', isRTL && 'flex-row-reverse')}>
+                  <ImageIcon className="h-4 w-4" />
+                  <span className={cn(isRTL && 'font-arabic')}>{isRTL ? 'صورة' : 'Photo'}</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Camera className="h-4 w-4 mr-2" />
-                  {isRTL ? 'مسح مستند' : 'Scan Document'}
+                <DropdownMenuItem className={cn('gap-2', isRTL && 'flex-row-reverse')}>
+                  <Camera className="h-4 w-4" />
+                  <span className={cn(isRTL && 'font-arabic')}>{isRTL ? 'مسح مستند' : 'Scan Document'}</span>
                 </DropdownMenuItem>
                 <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>
-                    <MapPin className="h-4 w-4 mr-2" />
-                    {isRTL ? 'موقع' : 'Location'}
+                  <DropdownMenuSubTrigger className={cn('gap-2', isRTL && 'flex-row-reverse')}>
+                    <MapPin className="h-4 w-4" />
+                    <span className={cn(isRTL && 'font-arabic')}>{isRTL ? 'موقع' : 'Location'}</span>
                   </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent>
-                    <DropdownMenuItem onClick={() => handleShareLocation(false)}>
-                      <MapPin className="h-4 w-4 mr-2" />
-                      {isRTL ? 'الموقع الحالي' : 'Current Location'}
+                  <DropdownMenuSubContent dir={isRTL ? 'rtl' : 'ltr'}>
+                    <DropdownMenuItem onClick={() => handleShareLocation(false)} className={cn('gap-2', isRTL && 'flex-row-reverse')}>
+                      <MapPin className="h-4 w-4" />
+                      <span className={cn(isRTL && 'font-arabic')}>{isRTL ? 'الموقع الحالي' : 'Current Location'}</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => handleShareLocation(true, 15)}>
-                      <Clock className="h-4 w-4 mr-2" />
-                      {isRTL ? 'مباشر 15 دقيقة' : 'Live 15 min'}
+                    <DropdownMenuItem onClick={() => handleShareLocation(true, 15)} className={cn('gap-2', isRTL && 'flex-row-reverse')}>
+                      <Clock className="h-4 w-4" />
+                      <span className={cn(isRTL && 'font-arabic')}>{isRTL ? 'مباشر 15 دقيقة' : 'Live 15 min'}</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleShareLocation(true, 60)}>
-                      <Clock className="h-4 w-4 mr-2" />
-                      {isRTL ? 'مباشر 1 ساعة' : 'Live 1 hour'}
+                    <DropdownMenuItem onClick={() => handleShareLocation(true, 60)} className={cn('gap-2', isRTL && 'flex-row-reverse')}>
+                      <Clock className="h-4 w-4" />
+                      <span className={cn(isRTL && 'font-arabic')}>{isRTL ? 'مباشر 1 ساعة' : 'Live 1 hour'}</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleShareLocation(true, 480)}>
-                      <Clock className="h-4 w-4 mr-2" />
-                      {isRTL ? 'مباشر 8 ساعات' : 'Live 8 hours'}
+                    <DropdownMenuItem onClick={() => handleShareLocation(true, 480)} className={cn('gap-2', isRTL && 'flex-row-reverse')}>
+                      <Clock className="h-4 w-4" />
+                      <span className={cn(isRTL && 'font-arabic')}>{isRTL ? 'مباشر 8 ساعات' : 'Live 8 hours'}</span>
                     </DropdownMenuItem>
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
@@ -670,8 +689,13 @@ function MessageBubble({ message, isSent, showAvatar, onLongPress, onSwipeReply,
         animate={controls}
         className={cn(
           'flex gap-2',
-          isSent ? (isRTL ? 'flex-row' : 'flex-row-reverse') : (isRTL ? 'flex-row-reverse' : 'flex-row')
+          // In RTL: sent messages should justify-end (right), received justify-start (left)
+          // In LTR: sent messages should justify-end (right), received justify-start (left)
+          isSent ? 'justify-end' : 'justify-start',
+          // Flex direction for avatar positioning
+          isSent ? 'flex-row-reverse' : 'flex-row'
         )}
+        dir={isRTL ? 'rtl' : 'ltr'}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onContextMenu={(e) => {
@@ -695,8 +719,10 @@ function MessageBubble({ message, isSent, showAvatar, onLongPress, onSwipeReply,
         <div
           className={cn(
             'chat-bubble',
-            isSent ? 'chat-bubble-sent' : 'chat-bubble-received'
+            isSent ? 'chat-bubble-sent' : 'chat-bubble-received',
+            isRTL && 'text-right'
           )}
+          dir={isRTL ? 'rtl' : 'ltr'}
         >
           {/* Reply Preview */}
           {replyMessage && (
