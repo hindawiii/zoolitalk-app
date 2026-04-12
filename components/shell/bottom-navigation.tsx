@@ -86,7 +86,7 @@ export function BottomNavigation() {
 
               {/* Notification badge example - can be connected to store */}
               {item.id === 'wansa' && (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full" />
+                <span className="absolute top-1 end-1 w-2 h-2 bg-accent rounded-full" />
               )}
             </button>
           )

@@ -144,15 +144,12 @@ export function ContactManager({ isOpen, onClose, onStartChat }: ContactManagerP
             {/* Search */}
             <div className="p-4 border-b">
               <div className="relative">
-                <Search className={cn(
-                  'absolute top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground',
-                  isRTL ? 'right-3' : 'left-3'
-                )} />
+                <Search className="absolute top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground start-3" />
                 <Input
                   placeholder={isRTL ? 'ابحث عن جهة اتصال...' : 'Search contacts...'}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className={cn('rounded-full bg-secondary/50', isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4')}
+                  className="rounded-full bg-secondary/50 ps-10 pe-4"
                 />
               </div>
             </div>
@@ -160,12 +157,12 @@ export function ContactManager({ isOpen, onClose, onStartChat }: ContactManagerP
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'all' | 'add')}>
               <TabsList className="w-full grid grid-cols-2 mx-4 mt-2" style={{ width: 'calc(100% - 2rem)' }}>
-                <TabsTrigger value="all" className={cn(isRTL && 'font-arabic')}>
-                  <Users className="h-4 w-4 mr-2" />
+                <TabsTrigger value="all" className={cn('gap-2', isRTL && 'font-arabic')}>
+                  <Users className="h-4 w-4" />
                   {isRTL ? 'الكل' : 'All'}
                 </TabsTrigger>
-                <TabsTrigger value="add" className={cn(isRTL && 'font-arabic')}>
-                  <UserPlus className="h-4 w-4 mr-2" />
+                <TabsTrigger value="add" className={cn('gap-2', isRTL && 'font-arabic')}>
+                  <UserPlus className="h-4 w-4" />
                   {isRTL ? 'إضافة' : 'Add'}
                 </TabsTrigger>
               </TabsList>
@@ -304,9 +301,9 @@ export function ContactManager({ isOpen, onClose, onStartChat }: ContactManagerP
                         variant="ghost"
                         size="sm"
                         onClick={() => setAddMethod(null)}
-                        className={cn(isRTL && 'flex-row-reverse')}
+                        className="gap-2"
                       >
-                        {isRTL ? <ChevronRight className="h-4 w-4 ml-2" /> : <ChevronLeft className="h-4 w-4 mr-2" />}
+                        <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
                         {isRTL ? 'رجوع' : 'Back'}
                       </Button>
 
@@ -326,11 +323,11 @@ export function ContactManager({ isOpen, onClose, onStartChat }: ContactManagerP
                           dir="ltr"
                         />
                         <Button 
-                          className="w-full" 
+                          className="w-full gap-2" 
                           onClick={addContact}
                           disabled={!addValue.trim()}
                         >
-                          <UserPlus className="h-4 w-4 mr-2" />
+                          <UserPlus className="h-4 w-4" />
                           <span className={cn(isRTL && 'font-arabic')}>
                             {isRTL ? 'إضافة جهة اتصال' : 'Add Contact'}
                           </span>
@@ -353,8 +350,8 @@ export function ContactManager({ isOpen, onClose, onStartChat }: ContactManagerP
                         : 'Let your friends add you easily'
                       }
                     </p>
-                    <Button variant="outline" className="w-full">
-                      <QrCode className="h-4 w-4 mr-2" />
+                    <Button variant="outline" className="w-full gap-2">
+                      <QrCode className="h-4 w-4" />
                       <span className={cn(isRTL && 'font-arabic')}>
                         {isRTL ? 'عرض رمز QR الخاص بك' : 'Show Your QR Code'}
                       </span>
@@ -451,10 +448,10 @@ function InviteContactItem({
         className={cn(isRTL && 'font-arabic')}
       >
         {isInvited ? (
-          <>
-            <Check className="h-4 w-4 mr-1" />
+          <span className="flex items-center gap-1">
+            <Check className="h-4 w-4" />
             {isRTL ? 'تم' : 'Sent'}
-          </>
+          </span>
         ) : (
           isRTL ? 'دعوة' : 'Invite'
         )}

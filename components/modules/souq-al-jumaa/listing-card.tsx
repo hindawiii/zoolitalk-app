@@ -69,10 +69,7 @@ export function ListingCard({ listing, onClick }: ListingCardProps) {
         )}
         
         {/* Badges */}
-        <div className={cn(
-          'absolute top-2 flex gap-1',
-          isRTL ? 'right-2' : 'left-2'
-        )}>
+        <div className="absolute top-2 flex gap-1 start-2">
           <Badge variant="secondary" className="bg-background/80 backdrop-blur-sm text-xs">
             {isRTL ? categoryLabel.ar : categoryLabel.en}
           </Badge>
@@ -88,10 +85,7 @@ export function ListingCard({ listing, onClick }: ListingCardProps) {
         <Button
           variant="ghost"
           size="icon"
-          className={cn(
-            'absolute top-2 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background',
-            isRTL ? 'left-2' : 'right-2'
-          )}
+          className="absolute top-2 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background end-2"
           onClick={(e) => {
             e.stopPropagation()
             toggleFavorite(listing.id)

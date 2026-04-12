@@ -113,9 +113,9 @@ function ServiceCard({ service, onOpenDetail }: ServiceCardProps) {
             )}
           >
             {service.isOpen ? (
-              <><CheckCircle2 className="h-3 w-3 ml-1" /> مفتوح</>
+              <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> مفتوح</span>
             ) : (
-              <><XCircle className="h-3 w-3 ml-1" /> مغلق</>
+              <span className="flex items-center gap-1"><XCircle className="h-3 w-3" /> مغلق</span>
             )}
           </Badge>
           {service.distance && (
