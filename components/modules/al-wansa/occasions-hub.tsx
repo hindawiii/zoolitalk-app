@@ -246,8 +246,8 @@ export function OccasionsHub({ isOpen, onClose }: OccasionsHubProps) {
                       : 'Send greeting messages to your friends on special occasions'
                     }
                   </p>
-                  <Button className={cn('w-full', isRTL && 'font-arabic')}>
-                    <Gift className="h-4 w-4 mr-2" />
+                  <Button className={cn('w-full gap-2', isRTL && 'font-arabic')}>
+                    <Gift className="h-4 w-4" />
                     {isRTL ? 'أرسل تهنئة' : 'Send Greeting'}
                   </Button>
                 </div>

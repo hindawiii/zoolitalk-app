@@ -632,7 +632,7 @@ export default function ZooliNews() {
                           className="object-cover"
                         />
                         <Badge 
-                          className="absolute top-3 left-3 bg-primary"
+                          className="absolute top-3 start-3 bg-primary"
                         >
                           {isRTL ? categoryConfig[article.category].labelAr : categoryConfig[article.category].labelEn}
                         </Badge>

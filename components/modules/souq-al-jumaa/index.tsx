@@ -122,26 +122,17 @@ export default function SouqAlJumaa() {
 
         {/* Search */}
         <div className="relative">
-          <Search className={cn(
-            'absolute top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground',
-            isRTL ? 'right-3' : 'left-3'
-          )} />
+          <Search className="absolute top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground start-3" />
           <Input
             placeholder={t('souq.search')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className={cn(
-              'h-10 rounded-full bg-secondary/50',
-              isRTL ? 'pr-10 pl-12' : 'pl-10 pr-12'
-            )}
+            className="h-10 rounded-full bg-secondary/50 ps-10 pe-12"
           />
           <Button
             variant="ghost"
             size="icon"
-            className={cn(
-              'absolute top-1/2 -translate-y-1/2 h-8 w-8',
-              isRTL ? 'left-1' : 'right-1'
-            )}
+            className="absolute top-1/2 -translate-y-1/2 h-8 w-8 end-1"
           >
             <SlidersHorizontal className="h-4 w-4" />
           </Button>

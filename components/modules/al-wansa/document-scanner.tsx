@@ -255,9 +255,9 @@ export function DocumentScanner({ isOpen, onClose, onCapture }: DocumentScannerP
                   variant="outline"
                   size="lg"
                   onClick={retake}
-                  className="rounded-full border-white/50 text-white hover:bg-white/20"
+                  className="rounded-full border-white/50 text-white hover:bg-white/20 gap-2"
                 >
-                  <RotateCcw className="h-5 w-5 mr-2" />
+                  <RotateCcw className="h-5 w-5" />
                   {isRTL ? 'إعادة' : 'Retake'}
                 </Button>
                 <Button
@@ -273,10 +273,10 @@ export function DocumentScanner({ isOpen, onClose, onCapture }: DocumentScannerP
                       transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                     />
                   ) : (
-                    <>
-                      <Check className="h-5 w-5 mr-2" />
+                    <span className="flex items-center gap-2">
+                      <Check className="h-5 w-5" />
                       {isRTL ? 'تأكيد' : 'Confirm'}
-                    </>
+                    </span>
                   )}
                 </Button>
               </div>

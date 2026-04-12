@@ -338,10 +338,7 @@ export default function ZoolProfile() {
             <Button
               variant="ghost"
               size="icon"
-              className={cn(
-                'absolute top-3 bg-background/30 backdrop-blur-sm hover:bg-background/50',
-                isRTL ? 'left-3' : 'right-3'
-              )}
+              className="absolute top-3 bg-background/30 backdrop-blur-sm hover:bg-background/50 end-3"
               onClick={() => setSettingsOpen(true)}
             >
               <Settings className="h-5 w-5 text-white" />
@@ -351,10 +348,7 @@ export default function ZoolProfile() {
             <Button
               variant="ghost"
               size="sm"
-              className={cn(
-                'absolute bottom-3 bg-background/30 backdrop-blur-sm hover:bg-background/50 text-white gap-1.5',
-                isRTL ? 'left-3' : 'right-3'
-              )}
+              className="absolute bottom-3 bg-background/30 backdrop-blur-sm hover:bg-background/50 text-white gap-1.5 end-3"
             >
               <Camera className="h-4 w-4" />
               <span className="text-xs">{isRTL ? 'تغيير' : 'Edit'}</span>

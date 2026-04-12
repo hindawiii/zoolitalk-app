@@ -32,6 +32,7 @@ import {
   Clock,
   Pause,
   Play,
+  Settings,
 } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -70,9 +71,10 @@ import { ar, enUS } from 'date-fns/locale'
 interface ChatViewProps {
   onBack: () => void
   onOpenGames?: () => void
+  onOpenProfile?: (userId: string) => void
 }
 
-export function ChatView({ onBack, onOpenGames }: ChatViewProps) {
+export function ChatView({ onBack, onOpenGames, onOpenProfile }: ChatViewProps) {
   const { 
     activeChatId, 
     chats, 
@@ -92,6 +94,7 @@ export function ChatView({ onBack, onOpenGames }: ChatViewProps) {
   const { currentUser } = useUserStore()
   const { t, language, isRTL } = useLanguage()
   const { interaction, greeting } = useGender()
+  const { setBackground, backgrounds } = useChatTheme()
   
   const [inputValue, setInputValue] = React.useState('')
   const [selectedMessage, setSelectedMessage] = React.useState<Message | null>(null)
@@ -102,6 +105,7 @@ export function ChatView({ onBack, onOpenGames }: ChatViewProps) {
   const [isListening, setIsListening] = React.useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false)
   const [deleteTarget, setDeleteTarget] = React.useState<{ message: Message; type: 'me' | 'everyone' } | null>(null)
+  const [showWallpaperPicker, setShowWallpaperPicker] = React.useState(false)
   
   const scrollRef = React.useRef<HTMLDivElement>(null)
   const inputRef = React.useRef<HTMLInputElement>(null)
@@ -272,8 +276,14 @@ export function ChatView({ onBack, onOpenGames }: ChatViewProps) {
 
   return (
     <div className="flex flex-col h-full bg-background w-full max-w-full overflow-hidden relative">
-      {/* Background Pattern */}
-      <ChatBackgroundPattern />
+      {/* Background Pattern - Click to change wallpaper */}
+      <div 
+        className="absolute inset-0 cursor-pointer" 
+        onClick={() => setShowWallpaperPicker(true)}
+        aria-label={isRTL ? 'تغيير الخلفية' : 'Change wallpaper'}
+      >
+        <ChatBackgroundPattern />
+      </div>
       
       {/* Header */}
       <header className="flex items-center gap-3 px-2 py-2 bg-card/95 backdrop-blur-sm border-b relative z-10">
@@ -281,24 +291,30 @@ export function ChatView({ onBack, onOpenGames }: ChatViewProps) {
           <BackIcon className="h-5 w-5" />
         </Button>
         
-        <div className="relative">
-          <Avatar className="h-10 w-10">
-            <AvatarImage src={chat.avatar} alt={chat.name} />
-            <AvatarFallback>{(isRTL ? chat.nameAr : chat.name)[0]}</AvatarFallback>
-          </Avatar>
-          {chat.isOnline && chat.type === 'private' && (
-            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-card rounded-full" />
-          )}
-        </div>
+        {/* Clickable Avatar + Name to open profile */}
+        <button 
+          className="flex items-center gap-3 flex-1 min-w-0 hover:bg-secondary/50 rounded-lg p-1 -m-1 transition-colors"
+          onClick={() => chat.type === 'private' && chat.participants?.[0] && onOpenProfile?.(chat.participants[0])}
+        >
+          <div className="relative flex-shrink-0">
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={chat.avatar} alt={chat.name} />
+              <AvatarFallback>{(isRTL ? chat.nameAr : chat.name)[0]}</AvatarFallback>
+            </Avatar>
+            {chat.isOnline && chat.type === 'private' && (
+              <span className="absolute bottom-0 end-0 w-2.5 h-2.5 bg-green-500 border-2 border-card rounded-full" />
+            )}
+          </div>
 
-        <div className="flex-1 min-w-0">
-          <h3 className={cn('font-semibold truncate', isRTL && 'font-arabic')}>
-            {isRTL ? chat.nameAr : chat.name}
-          </h3>
-          <p className="text-xs text-muted-foreground">
-            {chat.isOnline ? t('chat.online') : t('chat.offline')}
-          </p>
-        </div>
+          <div className="flex-1 min-w-0 text-start">
+            <h3 className={cn('font-semibold truncate', isRTL && 'font-arabic')}>
+              {isRTL ? chat.nameAr : chat.name}
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              {chat.isOnline ? t('chat.online') : t('chat.offline')}
+            </p>
+          </div>
+        </button>
 
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="icon">
@@ -466,22 +482,25 @@ export function ChatView({ onBack, onOpenGames }: ChatViewProps) {
           </motion.div>
         ) : (
           <div className={cn('flex items-center gap-2', isRTL && 'flex-row-reverse')}>
-            {/* Emoji Picker */}
-            <div className="relative flex-shrink-0">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-10 w-10"
-                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              >
-                <Smile className="h-5 w-5" />
-              </Button>
-              <EmojiPicker
-                isOpen={showEmojiPicker}
-                onSelect={handleEmojiSelect}
-                onClose={() => setShowEmojiPicker(false)}
-              />
-            </div>
+            {/* Settings Gear - opens wallpaper picker */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-10 w-10 flex-shrink-0"
+              onClick={() => setShowWallpaperPicker(true)}
+            >
+              <Settings className="h-5 w-5 text-muted-foreground" />
+            </Button>
+            
+            {/* Emoji Picker Toggle */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className={cn('h-10 w-10 flex-shrink-0', showEmojiPicker && 'bg-secondary')}
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            >
+              {showEmojiPicker ? <X className="h-5 w-5" /> : <Smile className="h-5 w-5" />}
+            </Button>
             
             {/* Attachment Menu */}
             <DropdownMenu>
@@ -601,6 +620,88 @@ export function ChatView({ onBack, onOpenGames }: ChatViewProps) {
         onOpenChange={setShowDeleteDialog}
         deleteTarget={deleteTarget}
       />
+
+      {/* Bottom-Docked Emoji Picker (Telegram Style) */}
+      <AnimatePresence>
+        {showEmojiPicker && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="absolute bottom-[72px] inset-x-0 bg-card border-t z-30 overflow-hidden"
+          >
+            <div className="p-4 grid grid-cols-8 gap-3 place-items-center max-h-[200px] overflow-y-auto">
+              {['😊', '❤️', '😂', '👍', '🤲', '☕', '🙏', '💪', '🎉', '👏', '🤝', '✨', '😍', '🥰', '😢', '🔥', '🇸🇩', '💚', '🌴', '☀️', '🌙', '🌺', '🤗', '😎'].map((emoji) => (
+                <button
+                  key={emoji}
+                  onClick={() => {
+                    handleEmojiSelect(emoji)
+                    setShowEmojiPicker(false)
+                  }}
+                  className="text-2xl hover:scale-125 transition-transform active:scale-95 p-1"
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Wallpaper Picker Sheet */}
+      <AnimatePresence>
+        {showWallpaperPicker && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/50"
+            onClick={() => setShowWallpaperPicker(false)}
+          >
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="absolute bottom-0 inset-x-0 bg-card rounded-t-2xl p-4 max-h-[60vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className={cn('text-lg font-semibold', isRTL && 'font-arabic')}>
+                  {isRTL ? 'خلفية المحادثة' : 'Chat Wallpaper'}
+                </h3>
+                <Button variant="ghost" size="icon" onClick={() => setShowWallpaperPicker(false)}>
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                {backgrounds.map((bg) => (
+                  <button
+                    key={bg.id}
+                    onClick={() => {
+                      setBackground(bg.id)
+                      setShowWallpaperPicker(false)
+                    }}
+                    className="aspect-video rounded-lg border-2 border-transparent hover:border-primary transition-colors overflow-hidden relative"
+                  >
+                    <div
+                      className="w-full h-full bg-background"
+                      style={{ backgroundImage: bg.pattern }}
+                    />
+                    <span className={cn(
+                      'absolute bottom-1 inset-x-1 text-xs text-center bg-black/50 text-white rounded px-1 py-0.5',
+                      isRTL && 'font-arabic'
+                    )}>
+                      {isRTL ? bg.nameAr : bg.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

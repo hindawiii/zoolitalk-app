@@ -110,24 +110,18 @@ export function ListingDetail({ listing, onClose, onStartWansa }: ListingDetailP
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={cn(
-                      'absolute top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm rounded-full',
-                      isRTL ? 'right-2' : 'left-2'
-                    )}
+                    className="absolute top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm rounded-full start-2"
                     onClick={prevImage}
                   >
-                    {isRTL ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+                    <ChevronLeft className="h-5 w-5 rtl:rotate-180" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={cn(
-                      'absolute top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm rounded-full',
-                      isRTL ? 'left-2' : 'right-2'
-                    )}
+                    className="absolute top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm rounded-full end-2"
                     onClick={nextImage}
                   >
-                    {isRTL ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+                    <ChevronRight className="h-5 w-5 rtl:rotate-180" />
                   </Button>
                   {/* Dots indicator */}
                   <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">

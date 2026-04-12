@@ -12,9 +12,15 @@ import { useUserStore } from '@/lib/stores/user-store'
 import { cn } from '@/lib/utils'
 
 export function FeedTab() {
-  const { posts, isLoading } = useFeedStore()
+  const { posts, isLoading, subscribeToFirestorePosts } = useFeedStore()
   const { currentUser } = useUserStore()
   const [showCreatePost, setShowCreatePost] = React.useState(false)
+
+  // Subscribe to Firestore posts on mount
+  React.useEffect(() => {
+    const unsubscribe = subscribeToFirestorePosts()
+    return () => unsubscribe()
+  }, [subscribeToFirestorePosts])
 
   return (
     <div className="flex flex-col h-full">
