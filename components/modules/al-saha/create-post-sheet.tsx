@@ -17,7 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useFeedStore, type Post, type PostExpiry } from '@/lib/stores/feed-store'
+import { useFeedStore, type PostExpiry } from '@/lib/stores/feed-store'
 import { useUserStore } from '@/lib/stores/user-store'
 import { useLanguage } from '@/components/providers/language-provider'
 import { cn } from '@/lib/utils'
@@ -49,7 +49,7 @@ interface CreatePostSheetProps {
 }
 
 export function CreatePostSheet({ open, onOpenChange }: CreatePostSheetProps) {
-  const { addPost } = useFeedStore()
+  const { addPost, addPostToFirestore } = useFeedStore()
   const { currentUser, addZoolPoints } = useUserStore()
   const { t, language, isRTL } = useLanguage()
   
@@ -63,8 +63,7 @@ export function CreatePostSheet({ open, onOpenChange }: CreatePostSheetProps) {
 
     setIsSubmitting(true)
 
-    const newPost: Post = {
-      id: `post-${Date.now()}`,
+    const postData = {
       authorId: currentUser.id,
       authorName: currentUser.name,
       authorNameAr: currentUser.nameAr,
@@ -75,13 +74,23 @@ export function CreatePostSheet({ open, onOpenChange }: CreatePostSheetProps) {
       reactions: { like: 0, love: 0, kaffu: 0, abshir: 0, haha: 0, sad: 0 },
       commentsCount: 0,
       sharesCount: 0,
-      timestamp: new Date(),
       expiry: expiry,
       expiresAt: getExpiryDate(expiry),
     }
 
-    addPost(newPost)
-    addZoolPoints(10) // Award points for posting
+    try {
+      // Save to Firestore for real-time sync
+      await addPostToFirestore(postData)
+      addZoolPoints(10) // Award points for posting
+    } catch (error) {
+      // Fallback to local store if Firestore fails
+      console.error('[v0] Failed to save to Firestore, using local store:', error)
+      addPost({
+        ...postData,
+        id: `post-${Date.now()}`,
+        timestamp: new Date(),
+      })
+    }
     
     setContent('')
     setImages([])

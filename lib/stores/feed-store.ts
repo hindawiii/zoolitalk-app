@@ -1,5 +1,15 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import {
+  collection,
+  addDoc,
+  onSnapshot,
+  query,
+  orderBy,
+  serverTimestamp,
+  type Timestamp,
+} from 'firebase/firestore'
+import { db } from '@/lib/firebase/config'
 
 export type ReactionType = 'like' | 'love' | 'kaffu' | 'abshir' | 'haha' | 'sad'
 
@@ -74,6 +84,8 @@ interface FeedState {
   posts: Post[]
   setPosts: (posts: Post[]) => void
   addPost: (post: Post) => void
+  addPostToFirestore: (post: Omit<Post, 'id' | 'timestamp'>) => Promise<void>
+  subscribeToFirestorePosts: () => () => void
   
   // Reactions
   reactToPost: (postId: string, reaction: ReactionType) => void
@@ -272,6 +284,73 @@ export const useFeedStore = create<FeedState>()(
       posts: demoPosts,
       setPosts: (posts) => set({ posts }),
       addPost: (post) => set((state) => ({ posts: [post, ...state.posts] })),
+      
+      // Add post to Firestore
+      addPostToFirestore: async (post) => {
+        try {
+          const postsRef = collection(db, 'posts')
+          await addDoc(postsRef, {
+            ...post,
+            timestamp: serverTimestamp(),
+            createdAt: serverTimestamp(),
+          })
+        } catch (error) {
+          console.error('[v0] Error adding post to Firestore:', error)
+          throw error
+        }
+      },
+      
+      // Subscribe to real-time Firestore posts
+      subscribeToFirestorePosts: () => {
+        const postsRef = collection(db, 'posts')
+        const q = query(postsRef, orderBy('timestamp', 'desc'))
+        
+        set({ isLoading: true })
+        
+        const unsubscribe = onSnapshot(
+          q,
+          (snapshot) => {
+            const firestorePosts: Post[] = snapshot.docs.map((doc) => {
+              const data = doc.data()
+              return {
+                id: doc.id,
+                authorId: data.authorId || '',
+                authorName: data.authorName || '',
+                authorNameAr: data.authorNameAr || '',
+                authorAvatar: data.authorAvatar || '',
+                content: data.content || '',
+                contentAr: data.contentAr || data.content || '',
+                images: data.images || [],
+                videoUrl: data.videoUrl,
+                isReel: data.isReel,
+                reactions: data.reactions || { like: 0, love: 0, kaffu: 0, abshir: 0, haha: 0, sad: 0 },
+                userReaction: data.userReaction,
+                commentsCount: data.commentsCount || 0,
+                sharesCount: data.sharesCount || 0,
+                timestamp: data.timestamp?.toDate?.() || new Date(),
+                location: data.location,
+                expiry: data.expiry,
+                expiresAt: data.expiresAt?.toDate?.(),
+              }
+            })
+            
+            // Merge Firestore posts with demo posts, avoiding duplicates
+            const existingIds = new Set(firestorePosts.map(p => p.id))
+            const mergedPosts = [
+              ...firestorePosts,
+              ...demoPosts.filter(p => !existingIds.has(p.id)),
+            ]
+            
+            set({ posts: mergedPosts, isLoading: false })
+          },
+          (error) => {
+            console.error('[v0] Error subscribing to Firestore posts:', error)
+            set({ isLoading: false })
+          }
+        )
+        
+        return unsubscribe
+      },
       
       reactToPost: (postId, reaction) =>
         set((state) => ({
