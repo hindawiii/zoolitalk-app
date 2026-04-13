@@ -119,33 +119,57 @@ export function FeedTab() {
             </button>
           </div>
 
-          {/* Stories Row */}
-          <div className="px-4 py-3 border-b border-[#2D5A27]/10 overflow-x-auto overflow-y-hidden w-full max-w-full scrollbar-hide bg-white dark:bg-card">
-            <div className="flex gap-3 w-max">
+          {/* Stories Row - Dark Olive Theme with Gold Accents */}
+          <div className="px-4 py-3 border-b border-[#2D5A27]/20 overflow-x-auto overflow-y-hidden w-full max-w-full scrollbar-hide bg-[#1a3a18] dark:bg-[#0f1f0e]">
+            <div className="flex gap-4 w-max">
               {/* Add Story */}
-              <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                <div className="relative">
-                  <Avatar className="h-16 w-16 border-2 border-dashed border-[#2D5A27]">
+              <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+                <div className="relative p-0.5 rounded-full border-2 border-dashed border-[#C9A227]/60 hover:border-[#C9A227] transition-colors">
+                  <Avatar className="h-16 w-16 bg-[#1a3a18] dark:bg-[#0f1f0e]">
                     <AvatarImage src={currentUser?.avatar} />
-                    <AvatarFallback className="bg-[#F5F5DC]">
-                      <Plus className="h-6 w-6 text-[#2D5A27]" />
+                    <AvatarFallback className="bg-[#2D5A27]/30 text-[#C9A227]">
+                      <Plus className="h-6 w-6" />
                     </AvatarFallback>
                   </Avatar>
                 </div>
-                <span className="text-xs font-arabic">إضافة</span>
+                <span className="text-xs font-arabic text-[#F5F0E1]/80">إضافة</span>
               </div>
               
-              {/* Story placeholders */}
-              {['فاطمة', 'عمر', 'أميرة', 'خالد', 'سارة'].map((name, i) => (
-                <div key={i} className="flex flex-col items-center gap-1 flex-shrink-0">
-                  <div className="p-0.5 rounded-full bg-gradient-to-br from-[#2D5A27] to-[#8B4513]">
-                    <Avatar className="h-16 w-16 border-2 border-white dark:border-background">
-                      <AvatarFallback className="bg-[#F5F5DC] text-[#2D5A27] font-arabic">
-                        {name[0]}
+              {/* Story placeholders - with new/viewed states */}
+              {[
+                { name: 'فاطمة', hasNew: true },
+                { name: 'عمر', hasNew: true },
+                { name: 'أميرة', hasNew: false },
+                { name: 'خالد', hasNew: true },
+                { name: 'سارة', hasNew: false },
+              ].map((story, i) => (
+                <div key={i} className="flex flex-col items-center gap-1.5 flex-shrink-0 cursor-pointer group">
+                  {/* Story ring - Gold for new, muted for viewed */}
+                  <div className={cn(
+                    'p-0.5 rounded-full transition-all duration-200',
+                    story.hasNew 
+                      ? 'bg-gradient-to-br from-[#C9A227] via-[#D4AF37] to-[#A67C00] group-hover:shadow-[0_0_8px_rgba(201,162,39,0.4)]'
+                      : 'bg-[#4a6741]/50 group-hover:bg-[#4a6741]/70'
+                  )}>
+                    <Avatar className="h-16 w-16 border-2 border-[#1a3a18] dark:border-[#0f1f0e]">
+                      <AvatarFallback className={cn(
+                        'font-arabic text-lg',
+                        story.hasNew 
+                          ? 'bg-[#2D5A27]/40 text-[#F5F0E1]'
+                          : 'bg-[#2D5A27]/20 text-[#F5F0E1]/60'
+                      )}>
+                        {story.name[0]}
                       </AvatarFallback>
                     </Avatar>
                   </div>
-                  <span className="text-xs text-muted-foreground font-arabic">{name}</span>
+                  <span className={cn(
+                    'text-xs font-arabic transition-colors',
+                    story.hasNew 
+                      ? 'text-[#F5F0E1]'
+                      : 'text-[#F5F0E1]/50'
+                  )}>
+                    {story.name}
+                  </span>
                 </div>
               ))}
             </div>
