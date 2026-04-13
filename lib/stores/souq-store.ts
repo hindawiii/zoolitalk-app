@@ -1,5 +1,19 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import {
+  collection,
+  addDoc,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  query,
+  orderBy,
+  where,
+  serverTimestamp,
+  type Timestamp,
+} from 'firebase/firestore'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { db, storage, isFirestoreAvailable } from '@/lib/firebase/config'
 
 export type ListingCategory = 
   | 'vehicles' // عربات
