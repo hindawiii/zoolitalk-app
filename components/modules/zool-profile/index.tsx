@@ -29,6 +29,8 @@ import {
   Crown,
   Sword,
   ChevronDown,
+  ArrowLeft,
+  ArrowRight,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -48,8 +50,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { useUserStore, type SocialStatus, type ProfessionalStatus, type ReceivedGift, type UserRank, type Gender } from '@/lib/stores/user-store'
+import { useUserStore, type SocialStatus, type ProfessionalStatus, type ReceivedGift, type UserRank, type Gender, type User } from '@/lib/stores/user-store'
 import { useAppStore } from '@/lib/stores/app-store'
+import { useChatStore } from '@/lib/stores/chat-store'
 import { useLanguage } from '@/components/providers/language-provider'
 import { useGender } from '@/hooks/use-gender'
 import { SOCIAL_STATUS_LABELS, PROFESSIONAL_STATUS_LABELS, RANK_LABELS } from '@/lib/gender-utils'
@@ -250,13 +253,60 @@ function FeaturedPostCard({
 
 export default function ZoolProfile() {
   const { isRTL, t } = useLanguage()
-  const { currentUser, followingIds, updateProfile } = useUserStore()
-  const { setSettingsOpen, triggerGift } = useAppStore()
+  const { currentUser, followingIds, updateProfile, viewedUser, setViewedUser, loadUserProfile } = useUserStore()
+  const { setSettingsOpen, triggerGift, viewingUserId, setViewingUserId, setActiveTab: setAppActiveTab } = useAppStore()
+  const { chats, setActiveChatId } = useChatStore()
   const { socialStatus, professionalStatus, rank } = useGender()
   const [activeTab, setActiveTab] = React.useState('posts')
   const [selectedImage, setSelectedImage] = React.useState<GalleryItem | null>(null)
   const [giftsLoaded, setGiftsLoaded] = React.useState(false)
   const [highlightsLoaded, setHighlightsLoaded] = React.useState(false)
+  
+  // Determine which user to display
+  const isViewingOtherUser = viewingUserId && viewingUserId !== currentUser?.id
+  const displayUser = isViewingOtherUser ? viewedUser : currentUser
+  const isOwnProfile = !isViewingOtherUser
+  
+  // Load user profile when viewing another user
+  React.useEffect(() => {
+    if (isViewingOtherUser && viewingUserId) {
+      loadUserProfile(viewingUserId)
+    }
+  }, [viewingUserId, isViewingOtherUser, loadUserProfile])
+  
+  // Clean up when leaving profile
+  React.useEffect(() => {
+    return () => {
+      if (isViewingOtherUser) {
+        setViewedUser(null)
+        setViewingUserId(null)
+      }
+    }
+  }, [isViewingOtherUser, setViewedUser, setViewingUserId])
+  
+  // Start chat with viewed user
+  const handleStartChat = () => {
+    if (viewingUserId) {
+      // Find existing chat or create new one
+      const existingChat = chats.find(c => 
+        c.type === 'private' && c.participants?.some(p => p.id === viewingUserId)
+      )
+      if (existingChat) {
+        setActiveChatId(existingChat.id)
+      } else {
+        setActiveChatId(`chat-${viewingUserId}`)
+      }
+      setAppActiveTab('wansa')
+      setViewingUserId(null)
+    }
+  }
+  
+  // Go back to previous view
+  const handleGoBack = () => {
+    setViewedUser(null)
+    setViewingUserId(null)
+    setAppActiveTab('wansa')
+  }
   
   // Lazy load gifts and highlights
   React.useEffect(() => {
@@ -270,10 +320,12 @@ export default function ZoolProfile() {
 
   const stats = [
     { label: isRTL ? 'المنشورات' : 'Posts', value: mockGallery.length },
-    { label: isRTL ? 'المتابعين' : 'Followers', value: currentUser?.followers ?? 1234 },
-    { label: isRTL ? 'يتابع' : 'Following', value: currentUser?.following ?? followingIds.length },
-    { label: isRTL ? 'نقاط زول' : 'Zool Points', value: currentUser?.zoolPoints ?? 2500 },
+    { label: isRTL ? 'المتابعين' : 'Followers', value: displayUser?.followers ?? 1234 },
+    { label: isRTL ? 'يتابع' : 'Following', value: displayUser?.following ?? followingIds.length },
+    { label: isRTL ? 'نقاط زول' : 'Zool Points', value: displayUser?.zoolPoints ?? 2500 },
   ]
+  
+  const BackIcon = isRTL ? ArrowRight : ArrowLeft
 
   const formatNumber = (num: number) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
@@ -281,7 +333,7 @@ export default function ZoolProfile() {
     return num.toString()
   }
 
-  const userRank = currentUser?.rank || 'newbie'
+  const userRank = displayUser?.rank || 'newbie'
   const rankInfo = rankConfig[userRank]
 
   // Lightbox for images
@@ -325,34 +377,50 @@ export default function ZoolProfile() {
         <ScrollArea className="flex-1">
           {/* Cover Photo */}
           <div className="relative h-40 bg-gradient-to-br from-[#2D5A27] via-[#2D5A27]/80 to-emerald-700">
-            {currentUser?.coverPhoto && (
+            {displayUser?.coverPhoto && (
               <Image
-                src={currentUser.coverPhoto}
+                src={displayUser.coverPhoto}
                 alt="Cover"
                 fill
                 className="object-cover"
               />
             )}
             
-            {/* Settings Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-3 bg-background/30 backdrop-blur-sm hover:bg-background/50 end-3"
-              onClick={() => setSettingsOpen(true)}
-            >
-              <Settings className="h-5 w-5 text-white" />
-            </Button>
+            {/* Back Button (when viewing other user) */}
+            {!isOwnProfile && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-3 bg-background/30 backdrop-blur-sm hover:bg-background/50 start-3"
+                onClick={handleGoBack}
+              >
+                <BackIcon className="h-5 w-5 text-white" />
+              </Button>
+            )}
+            
+            {/* Settings Button (own profile only) */}
+            {isOwnProfile && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-3 bg-background/30 backdrop-blur-sm hover:bg-background/50 end-3"
+                onClick={() => setSettingsOpen(true)}
+              >
+                <Settings className="h-5 w-5 text-white" />
+              </Button>
+            )}
 
-            {/* Edit Cover Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="absolute bottom-3 bg-background/30 backdrop-blur-sm hover:bg-background/50 text-white gap-1.5 end-3"
-            >
-              <Camera className="h-4 w-4" />
-              <span className="text-xs">{isRTL ? 'تغيير' : 'Edit'}</span>
-            </Button>
+            {/* Edit Cover Button (own profile only) */}
+            {isOwnProfile && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute bottom-3 bg-background/30 backdrop-blur-sm hover:bg-background/50 text-white gap-1.5 end-3"
+              >
+                <Camera className="h-4 w-4" />
+                <span className="text-xs">{isRTL ? 'تغيير' : 'Edit'}</span>
+              </Button>
+            )}
           </div>
 
           {/* Profile Header */}
@@ -361,9 +429,9 @@ export default function ZoolProfile() {
             <div className="relative -mt-16 mb-4 flex justify-center">
               <AnimatedAvatarFrame rank={userRank}>
                 <Avatar className="h-28 w-28 border-4 border-background shadow-lg">
-                  <AvatarImage src={currentUser?.avatar} alt={currentUser?.name} />
+                  <AvatarImage src={displayUser?.avatar} alt={displayUser?.name} />
                   <AvatarFallback className="text-3xl bg-[#2D5A27] text-white font-arabic">
-                    {currentUser?.nickname?.[0] || currentUser?.nameAr?.[0] || 'ز'}
+                    {displayUser?.nickname?.[0] || displayUser?.nameAr?.[0] || 'ز'}
                   </AvatarFallback>
                 </Avatar>
               </AnimatedAvatarFrame>
@@ -392,105 +460,121 @@ export default function ZoolProfile() {
 
             {/* Nickname (اللقب) - Prominent Display */}
             <div className="text-center space-y-1">
-              {currentUser?.nickname && (
+              {displayUser?.nickname && (
                 <motion.h1
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="text-2xl font-bold font-arabic text-[#2D5A27]"
                 >
-                  {currentUser.nickname}
+                  {displayUser.nickname}
                 </motion.h1>
               )}
               
               <div className="flex items-center justify-center gap-2">
                 <p className={cn('text-base font-medium', isRTL && 'font-arabic')}>
-                  {isRTL ? currentUser?.nameAr : currentUser?.name || (isRTL ? 'مستخدم راكوبتنا' : 'Rakobatna User')}
+                  {isRTL ? displayUser?.nameAr : displayUser?.name || (isRTL ? 'مستخدم راكوبتنا' : 'Rakobatna User')}
                 </p>
-                {currentUser?.isVerified && (
+                {displayUser?.isVerified && (
                   <ShieldCheck className="h-4 w-4 text-[#2D5A27]" />
                 )}
               </div>
 
-              <p className="text-muted-foreground text-sm">@{currentUser?.username || 'rakobatna_user'}</p>
+              <p className="text-muted-foreground text-sm">@{displayUser?.username || 'rakobatna_user'}</p>
             </div>
 
             {/* Status Badges Row */}
             <div className="flex items-center justify-center gap-2 mt-3 flex-wrap">
-              {/* Social Status Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1.5 font-arabic text-xs h-7">
-                    <Heart className="h-3 w-3 text-pink-500" />
-                    {currentUser?.socialStatus 
-                      ? socialStatus(currentUser.socialStatus)
-                      : (isRTL ? 'الحالة' : 'Status')
-                    }
-                    <ChevronDown className="h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="font-arabic">
-                  {(Object.keys(SOCIAL_STATUS_LABELS) as SocialStatus[]).map((key) => (
-                    <DropdownMenuItem
-                      key={key}
-                      onClick={() => updateProfile({ socialStatus: key })}
-                      className={currentUser?.socialStatus === key ? 'bg-primary/10' : ''}
-                    >
-                      {socialStatus(key)}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {/* Professional Status Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1.5 font-arabic text-xs h-7">
-                    {currentUser?.professionalStatus && (
-                      React.createElement(professionalStatusIcons[currentUser.professionalStatus], {
-                        className: 'h-3 w-3 text-[#2D5A27]'
-                      })
-                    )}
-                    {currentUser?.professionalStatus 
-                      ? professionalStatus(currentUser.professionalStatus)
-                      : (isRTL ? 'المهنة' : 'Work')
-                    }
-                    <ChevronDown className="h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="font-arabic">
-                  {(Object.keys(PROFESSIONAL_STATUS_LABELS) as ProfessionalStatus[]).map((key) => {
-                    const Icon = professionalStatusIcons[key]
-                    return (
+              {/* Social Status - Dropdown for own profile, Badge for others */}
+              {isOwnProfile ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-1.5 font-arabic text-xs h-7">
+                      <Heart className="h-3 w-3 text-pink-500" />
+                      {displayUser?.socialStatus 
+                        ? socialStatus(displayUser.socialStatus)
+                        : (isRTL ? 'الحالة' : 'Status')
+                      }
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" className="font-arabic">
+                    {(Object.keys(SOCIAL_STATUS_LABELS) as SocialStatus[]).map((key) => (
                       <DropdownMenuItem
                         key={key}
-                        onClick={() => updateProfile({ professionalStatus: key })}
-                        className={currentUser?.professionalStatus === key ? 'bg-primary/10' : ''}
+                        onClick={() => updateProfile({ socialStatus: key })}
+                        className={displayUser?.socialStatus === key ? 'bg-primary/10' : ''}
                       >
-                        <Icon className="h-4 w-4 me-2" />
-                        {professionalStatus(key)}
+                        {socialStatus(key)}
                       </DropdownMenuItem>
-                    )
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : displayUser?.socialStatus && (
+                <Badge variant="secondary" className="gap-1.5 font-arabic text-xs">
+                  <Heart className="h-3 w-3 text-pink-500" />
+                  {socialStatus(displayUser.socialStatus)}
+                </Badge>
+              )}
+
+              {/* Professional Status - Dropdown for own profile, Badge for others */}
+              {isOwnProfile ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-1.5 font-arabic text-xs h-7">
+                      {displayUser?.professionalStatus && (
+                        React.createElement(professionalStatusIcons[displayUser.professionalStatus], {
+                          className: 'h-3 w-3 text-[#2D5A27]'
+                        })
+                      )}
+                      {displayUser?.professionalStatus 
+                        ? professionalStatus(displayUser.professionalStatus)
+                        : (isRTL ? 'المهنة' : 'Work')
+                      }
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" className="font-arabic">
+                    {(Object.keys(PROFESSIONAL_STATUS_LABELS) as ProfessionalStatus[]).map((key) => {
+                      const Icon = professionalStatusIcons[key]
+                      return (
+                        <DropdownMenuItem
+                          key={key}
+                          onClick={() => updateProfile({ professionalStatus: key })}
+                          className={displayUser?.professionalStatus === key ? 'bg-primary/10' : ''}
+                        >
+                          <Icon className="h-4 w-4 me-2" />
+                          {professionalStatus(key)}
+                        </DropdownMenuItem>
+                      )
+                    })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : displayUser?.professionalStatus && (
+                <Badge variant="secondary" className="gap-1.5 font-arabic text-xs">
+                  {React.createElement(professionalStatusIcons[displayUser.professionalStatus], {
+                    className: 'h-3 w-3 text-[#2D5A27]'
                   })}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                  {professionalStatus(displayUser.professionalStatus)}
+                </Badge>
+              )}
             </div>
 
             {/* Bio */}
-            {currentUser?.bio && (
+            {displayUser?.bio && (
               <p className={cn(
                 'text-sm max-w-xs mx-auto text-center mt-3',
                 isRTL && 'font-arabic'
               )}>
-                {isRTL ? currentUser.bioAr : currentUser.bio}
+                {isRTL ? displayUser.bioAr : displayUser.bio}
               </p>
             )}
 
             {/* Location & Joined */}
             <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground mt-2">
-              {currentUser?.location && (
+              {displayUser?.location && (
                 <span className="flex items-center gap-1 font-arabic">
                   <MapPin className="h-3 w-3" />
-                  {currentUser.location}
+                  {displayUser.location}
                 </span>
               )}
               <span className="flex items-center gap-1">
@@ -518,21 +602,43 @@ export default function ZoolProfile() {
 
             {/* Action Buttons */}
             <div className="flex gap-3 mt-4">
-              <Button 
-                className="flex-1 gap-2" 
-                variant="outline"
-                onClick={() => setSettingsOpen(true)}
-              >
-                <Edit3 className="h-4 w-4" />
-                <span className="font-arabic">{isRTL ? 'تعديل الملف' : 'Edit Profile'}</span>
-              </Button>
-              <Button 
-                className="flex-1 gap-2 bg-[#2D5A27] hover:bg-[#2D5A27]/90 text-white"
-                onClick={() => triggerGift('jabana', currentUser?.name || 'User')}
-              >
-                <Gift className="h-4 w-4" />
-                <span className="font-arabic">{isRTL ? 'إرسال هدية' : 'Send Gift'}</span>
-              </Button>
+              {isOwnProfile ? (
+                <>
+                  <Button 
+                    className="flex-1 gap-2" 
+                    variant="outline"
+                    onClick={() => setSettingsOpen(true)}
+                  >
+                    <Edit3 className="h-4 w-4" />
+                    <span className="font-arabic">{isRTL ? 'تعديل الملف' : 'Edit Profile'}</span>
+                  </Button>
+                  <Button 
+                    className="flex-1 gap-2 bg-[#2D5A27] hover:bg-[#2D5A27]/90 text-white"
+                    onClick={() => triggerGift('jabana', displayUser?.name || 'User')}
+                  >
+                    <Gift className="h-4 w-4" />
+                    <span className="font-arabic">{isRTL ? 'إرسال هدية' : 'Send Gift'}</span>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button 
+                    className="flex-1 gap-2" 
+                    variant="outline"
+                    onClick={handleStartChat}
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    <span className="font-arabic">{isRTL ? 'مراسلة' : 'Message'}</span>
+                  </Button>
+                  <Button 
+                    className="flex-1 gap-2 bg-[#2D5A27] hover:bg-[#2D5A27]/90 text-white"
+                    onClick={() => triggerGift('jabana', displayUser?.name || 'User')}
+                  >
+                    <Gift className="h-4 w-4" />
+                    <span className="font-arabic">{isRTL ? 'إرسال هدية' : 'Send Gift'}</span>
+                  </Button>
+                </>
+              )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="icon">
@@ -554,7 +660,7 @@ export default function ZoolProfile() {
           </div>
 
           {/* Al-Saha Museum (Highlights) Section */}
-          {highlightsLoaded && currentUser?.featuredPosts && currentUser.featuredPosts.length > 0 && (
+          {highlightsLoaded && displayUser?.featuredPosts && displayUser.featuredPosts.length > 0 && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -568,7 +674,7 @@ export default function ZoolProfile() {
               </div>
               <ScrollArea className="w-full">
                 <div className="flex gap-3 pb-2">
-                  {currentUser.featuredPosts.map((post) => (
+                  {displayUser.featuredPosts.map((post) => (
                     <FeaturedPostCard
                       key={post.id}
                       post={post}
@@ -588,7 +694,7 @@ export default function ZoolProfile() {
           )}
 
           {/* Gift Showcase (Karam System) Section */}
-          {giftsLoaded && currentUser?.gifts && currentUser.gifts.length > 0 && (
+          {giftsLoaded && displayUser?.gifts && displayUser.gifts.length > 0 && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -602,7 +708,7 @@ export default function ZoolProfile() {
               </div>
               <ScrollArea className="w-full">
                 <div className="flex gap-3 pb-2">
-                  {currentUser.gifts.map((gift) => (
+                  {displayUser.gifts.map((gift) => (
                     <GiftCard key={gift.id} gift={gift} isRTL={isRTL} />
                   ))}
                 </div>
