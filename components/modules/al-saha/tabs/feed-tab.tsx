@@ -1,19 +1,22 @@
 'use client'
 
 import * as React from 'react'
-import { Plus, Camera, Video } from 'lucide-react'
+import { Plus, Camera, Video, Wifi, WifiOff, AlertCircle, Database } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { PostCard } from '../post-card'
 import { CreatePostSheet } from '../create-post-sheet'
 import { useFeedStore } from '@/lib/stores/feed-store'
 import { useUserStore } from '@/lib/stores/user-store'
+import { useLanguage } from '@/components/providers/language-provider'
 import { cn } from '@/lib/utils'
 
 export function FeedTab() {
-  const { posts, isLoading, subscribeToFirestorePosts } = useFeedStore()
+  const { posts, isLoading, subscribeToFirestorePosts, firebaseStatus, firebaseError } = useFeedStore()
   const { currentUser } = useUserStore()
+  const { isRTL } = useLanguage()
   const [showCreatePost, setShowCreatePost] = React.useState(false)
 
   // Subscribe to Firestore posts on mount
@@ -21,11 +24,80 @@ export function FeedTab() {
     const unsubscribe = subscribeToFirestorePosts()
     return () => unsubscribe()
   }, [subscribeToFirestorePosts])
+  
+  // Connection status display
+  const getStatusConfig = () => {
+    switch (firebaseStatus) {
+      case 'connected':
+        return { 
+          icon: Wifi, 
+          text: isRTL ? 'متصل بالخادم' : 'Connected', 
+          color: 'text-green-600 bg-green-100 dark:bg-green-900/30' 
+        }
+      case 'connecting':
+        return { 
+          icon: Database, 
+          text: isRTL ? 'جاري الاتصال...' : 'Connecting...', 
+          color: 'text-amber-600 bg-amber-100 dark:bg-amber-900/30' 
+        }
+      case 'error':
+        return { 
+          icon: AlertCircle, 
+          text: isRTL ? 'خطأ في الاتصال' : 'Connection Error', 
+          color: 'text-red-600 bg-red-100 dark:bg-red-900/30' 
+        }
+      case 'unconfigured':
+      default:
+        return { 
+          icon: WifiOff, 
+          text: isRTL ? 'وضع تجريبي' : 'Demo Mode', 
+          color: 'text-blue-600 bg-blue-100 dark:bg-blue-900/30' 
+        }
+    }
+  }
+  
+  const statusConfig = getStatusConfig()
+  const StatusIcon = statusConfig.icon
 
   return (
     <div className="flex flex-col h-full">
       <ScrollArea className="flex-1">
         <div className="pb-4">
+          {/* Firebase Connection Status - Dev indicator */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className={cn(
+              'flex items-center justify-center gap-2 py-1.5 text-xs font-medium',
+              statusConfig.color
+            )}>
+              <StatusIcon className="h-3.5 w-3.5" />
+              <span className={cn(isRTL && 'font-arabic')}>{statusConfig.text}</span>
+            </div>
+          )}
+          
+          {/* Firebase Error Alert */}
+          {firebaseStatus === 'error' && firebaseError && (
+            <Alert variant="destructive" className="mx-4 mt-2">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle className={cn(isRTL && 'font-arabic')}>
+                {isRTL ? 'خطأ في الاتصال' : 'Connection Error'}
+              </AlertTitle>
+              <AlertDescription className="text-xs">
+                {firebaseError}
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {/* Demo Mode Notice */}
+          {firebaseStatus === 'unconfigured' && (
+            <div className="mx-4 mt-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+              <p className={cn('text-sm text-blue-700 dark:text-blue-300', isRTL && 'font-arabic text-end')}>
+                {isRTL 
+                  ? 'تعمل في وضع تجريبي - قم بتكوين Firebase لتمكين المنشورات في الوقت الفعلي'
+                  : 'Running in demo mode - configure Firebase for real-time posts'}
+              </p>
+            </div>
+          )}
+          
           {/* Create Post Prompt */}
           <div className="p-4 border-b border-[#2D5A27]/10 bg-white dark:bg-card">
             <button

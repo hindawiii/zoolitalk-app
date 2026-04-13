@@ -9,7 +9,7 @@ import {
   serverTimestamp,
   type Timestamp,
 } from 'firebase/firestore'
-import { db } from '@/lib/firebase/config'
+import { db, isFirestoreAvailable, getFirebaseConnectionStatus } from '@/lib/firebase/config'
 
 export type ReactionType = 'like' | 'love' | 'kaffu' | 'abshir' | 'haha' | 'sad'
 
@@ -113,6 +113,10 @@ interface FeedState {
   // Loading states
   isLoading: boolean
   setLoading: (loading: boolean) => void
+  
+  // Firebase connection status
+  firebaseStatus: 'unconfigured' | 'connecting' | 'connected' | 'error'
+  firebaseError: string | null
 }
 
 // Demo posts
@@ -233,7 +237,7 @@ const demoServices: LocalService[] = [
   {
     id: 's5',
     name: 'Al-Shifa Pharmacy',
-    nameAr: 'صيدلية الشفاء المناوبة',
+    nameAr: 'صي��لية الشفاء المناوبة',
     category: 'pharmacy',
     address: 'Omdurman',
     addressAr: 'أم درمان',
@@ -287,6 +291,19 @@ export const useFeedStore = create<FeedState>()(
       
       // Add post to Firestore
       addPostToFirestore: async (post) => {
+        // Check if Firestore is available
+        if (!isFirestoreAvailable() || !db) {
+          console.warn('[v0] Firestore not available - adding post to local state only')
+          // Add to local state with a generated ID
+          const localPost: Post = {
+            ...post,
+            id: `local-${Date.now()}`,
+            timestamp: new Date(),
+          }
+          set((state) => ({ posts: [localPost, ...state.posts] }))
+          return
+        }
+        
         try {
           const postsRef = collection(db, 'posts')
           await addDoc(postsRef, {
@@ -294,22 +311,43 @@ export const useFeedStore = create<FeedState>()(
             timestamp: serverTimestamp(),
             createdAt: serverTimestamp(),
           })
+          console.log('[v0] Post added to Firestore successfully')
         } catch (error) {
           console.error('[v0] Error adding post to Firestore:', error)
+          set({ firebaseError: error instanceof Error ? error.message : 'Failed to add post' })
           throw error
         }
       },
       
       // Subscribe to real-time Firestore posts
       subscribeToFirestorePosts: () => {
+        // Get current Firebase status
+        const { status, error } = getFirebaseConnectionStatus()
+        set({ firebaseStatus: status, firebaseError: error })
+        
+        // If Firestore is not available, just use demo posts
+        if (!isFirestoreAvailable() || !db) {
+          console.warn('[v0] Firestore not configured - using demo posts only')
+          set({ 
+            posts: demoPosts, 
+            isLoading: false,
+            firebaseStatus: 'unconfigured',
+            firebaseError: 'Firebase environment variables not configured'
+          })
+          // Return no-op unsubscribe
+          return () => {}
+        }
+        
+        console.log('[v0] Subscribing to Firestore posts...')
         const postsRef = collection(db, 'posts')
         const q = query(postsRef, orderBy('timestamp', 'desc'))
         
-        set({ isLoading: true })
+        set({ isLoading: true, firebaseStatus: 'connecting' })
         
         const unsubscribe = onSnapshot(
           q,
           (snapshot) => {
+            console.log('[v0] Firestore snapshot received:', snapshot.docs.length, 'posts')
             const firestorePosts: Post[] = snapshot.docs.map((doc) => {
               const data = doc.data()
               return {
@@ -341,11 +379,20 @@ export const useFeedStore = create<FeedState>()(
               ...demoPosts.filter(p => !existingIds.has(p.id)),
             ]
             
-            set({ posts: mergedPosts, isLoading: false })
+            set({ 
+              posts: mergedPosts, 
+              isLoading: false,
+              firebaseStatus: 'connected',
+              firebaseError: null
+            })
           },
           (error) => {
             console.error('[v0] Error subscribing to Firestore posts:', error)
-            set({ isLoading: false })
+            set({ 
+              isLoading: false,
+              firebaseStatus: 'error',
+              firebaseError: error instanceof Error ? error.message : 'Connection error'
+            })
           }
         )
         
@@ -439,6 +486,10 @@ export const useFeedStore = create<FeedState>()(
       
       isLoading: false,
       setLoading: (isLoading) => set({ isLoading }),
+      
+      // Firebase connection status
+      firebaseStatus: 'connecting',
+      firebaseError: null,
     }),
     {
       name: 'rakobatna-feed-storage',

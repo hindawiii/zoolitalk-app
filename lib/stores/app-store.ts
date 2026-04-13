@@ -13,6 +13,11 @@ interface AppState {
   activeTab: TabId
   setActiveTab: (tab: TabId) => void
   
+  // Profile viewing (for viewing other users' profiles)
+  viewingUserId: string | null
+  setViewingUserId: (userId: string | null) => void
+  openUserProfile: (userId: string) => void
+  
   // Settings drawer
   isSettingsOpen: boolean
   setSettingsOpen: (open: boolean) => void
@@ -45,6 +50,13 @@ export const useAppStore = create<AppState>()(
       // Default tab is Al-Wansa (chat)
       activeTab: 'wansa',
       setActiveTab: (activeTab) => set({ activeTab }),
+      
+      // Profile viewing
+      viewingUserId: null,
+      setViewingUserId: (viewingUserId) => set({ viewingUserId }),
+      openUserProfile: (userId) => {
+        set({ viewingUserId: userId, activeTab: 'profile' })
+      },
       
       // Settings drawer
       isSettingsOpen: false,

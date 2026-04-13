@@ -12,6 +12,7 @@ import { ReligiousAssistant } from './religious-assistant'
 import { ContactManager } from './contact-manager'
 import { DocumentScanner } from './document-scanner'
 import { useChatStore } from '@/lib/stores/chat-store'
+import { useAppStore } from '@/lib/stores/app-store'
 import { useLanguage } from '@/components/providers/language-provider'
 import { cn } from '@/lib/utils'
 
@@ -34,6 +35,7 @@ const tabs: Tab[] = [
 
 export default function AlWansa() {
   const { activeChatId, setActiveChatId } = useChatStore()
+  const { openUserProfile } = useAppStore()
   const { isRTL } = useLanguage()
   const [activeTab, setActiveTab] = React.useState<TabId>('messages')
   const [showOccasions, setShowOccasions] = React.useState(false)
@@ -43,6 +45,12 @@ export default function AlWansa() {
   const handleStartChat = (contactId: string) => {
     setActiveChatId(`chat-${contactId}`)
     setShowContacts(false)
+  }
+  
+  // Handle opening a user's profile from the chat header
+  const handleOpenProfile = (userId: string) => {
+    console.log('[v0] Opening profile for user:', userId)
+    openUserProfile(userId)
   }
 
   const handleScanCapture = (imageData: string) => {
@@ -126,6 +134,7 @@ export default function AlWansa() {
                 <ChatView 
                   onBack={() => setActiveChatId(null)} 
                   onOpenGames={() => setActiveTab('games')}
+                  onOpenProfile={handleOpenProfile}
                 />
               </motion.div>
             ) : (
