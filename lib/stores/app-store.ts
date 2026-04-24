@@ -3,6 +3,15 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 
 export type Language = 'ar' | 'en'
 export type TabId = 'wansa' | 'saha' | 'souq' | 'news' | 'profile'
+export type GameId = 'siga' | 'card-50' | 'crossword' | 'ludo' | 'dominoes'
+
+export interface MinimizedGame {
+  id: GameId
+  name: string
+  nameAr: string
+  icon: string
+  state?: Record<string, unknown> // Game-specific state
+}
 
 interface AppState {
   // Language & RTL
@@ -36,9 +45,15 @@ interface AppState {
   // Online status visibility
   showOnlineStatus: boolean
   setShowOnlineStatus: (show: boolean) => void
+  
+  // Minimized game (Gamza multitasking)
+  minimizedGame: MinimizedGame | null
+  minimizeGame: (game: MinimizedGame) => void
+  restoreGame: () => MinimizedGame | null
+  closeMinimizedGame: () => void
 }
 
-export type GiftType = 'jabana' | 'crown' | 'shield' | 'heart' | 'star'
+export type GiftType = 'jabana' | 'crown' | 'shield' | 'heart' | 'star' | string
 
 export const useAppStore = create<AppState>()(
   persist(
@@ -80,6 +95,16 @@ export const useAppStore = create<AppState>()(
       // Online status
       showOnlineStatus: true,
       setShowOnlineStatus: (showOnlineStatus) => set({ showOnlineStatus }),
+      
+      // Minimized game
+      minimizedGame: null,
+      minimizeGame: (game) => set({ minimizedGame: game }),
+      restoreGame: () => {
+        const { minimizedGame } = get()
+        set({ minimizedGame: null })
+        return minimizedGame
+      },
+      closeMinimizedGame: () => set({ minimizedGame: null }),
     }),
     {
       name: 'rakobatna-app-storage',
