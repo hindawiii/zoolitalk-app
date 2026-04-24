@@ -35,6 +35,9 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useLanguage } from '@/components/providers/language-provider'
 import { cn } from '@/lib/utils'
+import { OpportunitiesSlider } from './opportunities-slider'
+import { OpportunityDetailSheet } from './opportunity-detail-sheet'
+import type { Opportunity } from '@/lib/types/opportunities'
 
 // Types
 interface NewsArticle {
@@ -293,6 +296,15 @@ export default function ZooliNews() {
   const [isRefreshing, setIsRefreshing] = React.useState(false)
   const [mainTab, setMainTab] = React.useState<'news' | 'opportunities'>('news')
   
+  // Opportunities state
+  const [selectedOpportunity, setSelectedOpportunity] = React.useState<Opportunity | null>(null)
+  const [isOpportunitySheetOpen, setIsOpportunitySheetOpen] = React.useState(false)
+  
+  const handleOpportunityClick = (opportunity: Opportunity) => {
+    setSelectedOpportunity(opportunity)
+    setIsOpportunitySheetOpen(true)
+  }
+  
   // Currency Calculator state
   const [calcAmount, setCalcAmount] = React.useState<string>('100')
   const [calcCurrency, setCalcCurrency] = React.useState<string>('USD')
@@ -461,7 +473,11 @@ export default function ZooliNews() {
       </header>
 
       <ScrollArea className="flex-1 w-full">
-        <div className="px-4 py-4 space-y-4 w-full max-w-full">
+        <div className="py-4 space-y-4 w-full max-w-full">
+          {/* Al-Foras Opportunities Slider */}
+          <OpportunitiesSlider onOpportunityClick={handleOpportunityClick} />
+          
+          <div className="px-4 space-y-4">
           {/* Quick Currency Calculator */}
           <Card className="border-primary/30 bg-gradient-to-br from-primary/5 via-background to-accent/5 w-full">
             <CardHeader className="pb-3">
@@ -830,8 +846,19 @@ export default function ZooliNews() {
               </div>
             </TabsContent>
           </Tabs>
+          </div>
         </div>
       </ScrollArea>
+      
+      {/* Opportunity Detail Sheet */}
+      <OpportunityDetailSheet
+        opportunity={selectedOpportunity}
+        isOpen={isOpportunitySheetOpen}
+        onClose={() => {
+          setIsOpportunitySheetOpen(false)
+          setSelectedOpportunity(null)
+        }}
+      />
     </div>
   )
 }

@@ -4,6 +4,8 @@ import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/providers/theme-provider'
 import { LanguageProvider } from '@/components/providers/language-provider'
 import { GiftOverlay } from '@/components/gift-overlay'
+import { GlobalAudioPlayer } from '@/components/shared/global-audio-player'
+import { ReportSheet } from '@/components/shared/report-button'
 import './globals.css'
 
 const tajawal = Tajawal({
@@ -76,6 +78,8 @@ export default function RootLayout({
           <LanguageProvider>
             {children}
             <GiftOverlay />
+            <GlobalAudioPlayer />
+            <ReportSheet />
           </LanguageProvider>
         </ThemeProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
