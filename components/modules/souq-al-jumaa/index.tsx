@@ -162,7 +162,7 @@ export default function SouqAlJumaa() {
 
       {/* Categories */}
       <div className="px-4 py-3 border-b overflow-x-auto overflow-y-hidden w-full max-w-full scrollbar-hide" dir={isRTL ? 'rtl' : 'ltr'}>
-        <div className={cn("flex gap-2 w-max", isRTL && "flex-row-reverse")}
+        <div className={cn("flex gap-2 w-max", isRTL && "flex-row-reverse")}>
           {/* All category */}
           <button
             onClick={() => setActiveCategory('all')}
